@@ -1,4 +1,4 @@
-# shared_testcase — verified COOLFluiD FR test cases
+# shared_testcase repository
 
 A small, clean collection of Flux Reconstruction (FR) test cases that are confirmed to run on the merged build. 
 
