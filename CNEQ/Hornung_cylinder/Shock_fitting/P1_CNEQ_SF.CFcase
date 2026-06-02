@@ -1,0 +1,297 @@
+################################################################################
+# Hornung 2D Cylinder — FR P1 + CNEQ (N2, 1-temperature)
+# SHOCK-FITTED MESH v2: R-H Dirichlet BC on ShockDown
+#
+# State order: [rho_N, rho_N2, u, v, T] (5 equations)
+# Mesh: shockfitting_v2 (Q1 quads, ~3625 elements, 2 disconnected sub-domains)
+# Time stepping: Newton (implicit), CFL via .inter file
+# Stabilization: Entropy Filtering ONLY (no LLAV, no OB, no ZS)
+# Shock BC: DirichletFromFile on ShockDown (R-H post-shock state from file)
+#           SuperOutlet on ShockUp (supersonic outflow from upstream)
+#
+# Changes from v1:
+#   - Mesh: upstream domain re-initialized to freestream (fix contamination)
+#   - ShockDown BC: DirichletFromFile with R-H computed post-shock state
+#     (replaces SubInletSFInternalVS which had stagnation trap from M extrapolation)
+#   - Results dir: RESULTS_SF_v2_RH_dirichlet
+################################################################################
+
+# ==============================================================================
+# 0) ENGINE
+# ==============================================================================
+
+CFEnv.ExceptionLogLevel    = 1000
+CFEnv.DoAssertions         = true
+CFEnv.AssertionDumps       = true
+CFEnv.AssertionThrows      = true
+CFEnv.AssertThrows         = true
+CFEnv.AssertDumps          = true
+CFEnv.ExceptionDumps       = true
+CFEnv.ExceptionOutputs     = true
+CFEnv.RegistSignalHandlers = false
+CFEnv.OnlyCPU0Writes       = false
+CFEnv.ErrorOnUnusedConfig  = false
+
+# ==============================================================================
+# 1) MODULES
+# ==============================================================================
+
+Simulator.Modules.Libs = \
+  libShapeFunctions libCFmeshFileWriter libCFmeshFileReader \
+  libParaViewWriter libTecplotWriter \
+  libNEQ libFluxReconstructionMethod libFluxReconstructionNavierStokes \
+  libFluxReconstructionNEQ libForwardEuler libBackwardEuler libPetscI \
+  libGmsh2CFmesh libNavierStokes libGambit2CFmesh \
+  libPlatoI libNewtonMethod \
+  libAeroCoefFR libAeroCoefFRNEQ
+
+# ==============================================================================
+# 2) PATHS
+# ==============================================================================
+
+Simulator.Paths.ModulesDir = /mnt/c/codes/COOLFluiD/COOLFluiD-merged/optim/dso
+Simulator.Paths.WorkingDir = ./
+Simulator.Paths.ResultsDir = ./RESULTS_SF_v2_RH_dirichlet_2
+
+# ==============================================================================
+# 3) PHYSICAL MODEL — CNEQ (1-temperature)
+# ==============================================================================
+
+Simulator.SubSystems     = SubSystem
+Simulator.SubSystemTypes = StandardSubSystem
+
+Simulator.SubSystem.Default.PhysicalModelType = NavierStokes2DNEQ
+
+Simulator.SubSystem.NavierStokes2DNEQ.refValues = \
+  0.0001952 0.004956 5590. 5590. 1833.
+
+Simulator.SubSystem.NavierStokes2DNEQ.PropertyLibrary    = Plato
+Simulator.SubSystem.NavierStokes2DNEQ.Plato.mixtureName  = nitrogen2
+Simulator.SubSystem.NavierStokes2DNEQ.Plato.reactionName = nitrogen2
+Simulator.SubSystem.NavierStokes2DNEQ.Plato.transfName   = empty
+Simulator.SubSystem.NavierStokes2DNEQ.Plato.path         = /mnt/c/codes/COOLFluiD/ToSend/PLATO/plato_database-main_feb26/database-main
+Simulator.SubSystem.NavierStokes2DNEQ.Plato.Xtol         = 1.e-10
+
+Simulator.SubSystem.NavierStokes2DNEQ.nbSpecies      = 2
+Simulator.SubSystem.NavierStokes2DNEQ.nbEulerEqs     = 3
+Simulator.SubSystem.NavierStokes2DNEQ.nbVibEnergyEqs = 0
+
+# ==============================================================================
+# 4) OUTPUT
+# ==============================================================================
+
+Simulator.SubSystem.OutputFormat = CFmesh ParaView
+
+Simulator.SubSystem.CFmesh.FileName   = P1_CNEQ_SF.CFmesh
+Simulator.SubSystem.CFmesh.SaveRate   = 500
+Simulator.SubSystem.CFmesh.AppendTime = false
+Simulator.SubSystem.CFmesh.AppendIter = true
+Simulator.SubSystem.CFmesh.WriteSol   = ParWriteSolution
+
+Simulator.SubSystem.ParaView.FileName       = P1_CNEQ_SF.vtu
+Simulator.SubSystem.ParaView.Data.updateVar = Rhoivt
+Simulator.SubSystem.ParaView.Data.printExtraValues = true
+Simulator.SubSystem.ParaView.WriteSol       = WriteSolutionHighOrder
+Simulator.SubSystem.ParaView.SaveRate       = 500
+Simulator.SubSystem.ParaView.AppendTime     = false
+Simulator.SubSystem.ParaView.AppendIter     = true
+
+Simulator.SubSystem.ParaView.Data.DataHandleOutput.SocketNames   = outputPP minEntropy
+Simulator.SubSystem.ParaView.Data.DataHandleOutput.VariableNames = Physicality MinEntropy
+
+# ==============================================================================
+# 5) CONVERGENCE — Newton (implicit), CFL ramp via .inter file
+# ==============================================================================
+
+Simulator.SubSystem.StopCondition = AbsoluteNormAndMaxIter
+Simulator.SubSystem.AbsoluteNormAndMaxIter.MaxIter = 200000
+Simulator.SubSystem.AbsoluteNormAndMaxIter.AbsNorm = -8.0
+
+Simulator.SubSystem.ConvergenceMethod = NewtonIterator
+Simulator.SubSystem.NewtonIterator.ConvergenceFile = convergence.plt
+Simulator.SubSystem.NewtonIterator.ShowRate = 1
+Simulator.SubSystem.NewtonIterator.ConvRate = 50
+Simulator.SubSystem.NewtonIterator.Data.L2.MonitoredVarID = 4
+
+# CFL controlled via .inter file
+Simulator.SubSystem.NewtonIterator.Data.CFL.ComputeCFL = Interactive
+
+# Interactive parameter reader
+Simulator.SubSystem.InteractiveParamReader.FileName = ./P1_CNEQ_SF.inter
+Simulator.SubSystem.InteractiveParamReader.readRate = 1
+
+Simulator.SubSystem.NewtonIterator.Data.MaxSteps = 1
+Simulator.SubSystem.NewtonIterator.StdUpdateSol.Relaxation = 0.5
+Simulator.SubSystem.NewtonIterator.StdUpdateSol.Validate = true
+Simulator.SubSystem.NewtonIterator.StdUpdateSol.PositivityLineSearch = true
+Simulator.SubSystem.NewtonIterator.StdUpdateSol.PositivityMinValues = \
+  1.0e-16 1.0e-16 -1.0e30 -1.0e30 100.0
+
+# State filter: clamp densities >= 0 and T >= 100 K
+Simulator.SubSystem.NewtonIterator.Data.FilterState = Max
+Simulator.SubSystem.NewtonIterator.Data.Max.maskIDs = 1 1 0 0 1
+Simulator.SubSystem.NewtonIterator.Data.Max.minValues = 0.0 0.0 0.0 0.0 100.0
+
+Simulator.SubSystem.LinearSystemSolver = PETSC
+Simulator.SubSystem.LSSNames = NewtonIteratorLSS
+Simulator.SubSystem.NewtonIteratorLSS.Data.PCType            = PCASM
+Simulator.SubSystem.NewtonIteratorLSS.Data.KSPShowRate       = 50
+Simulator.SubSystem.NewtonIteratorLSS.Data.KSPType           = KSPGMRES
+Simulator.SubSystem.NewtonIteratorLSS.Data.MatOrderingType   = MATORDERING_RCM
+Simulator.SubSystem.NewtonIteratorLSS.Data.MaxIter           = 1000
+Simulator.SubSystem.NewtonIteratorLSS.Data.RelativeTolerance = 1e-10
+Simulator.SubSystem.NewtonIteratorLSS.Data.NbKrylovSpaces    = 80
+
+# ==============================================================================
+# 6) FR DISCRETIZATION — Standard Conv + Diff (NO LLAV)
+# ==============================================================================
+
+Simulator.SubSystem.SpaceMethod = FluxReconstruction
+Simulator.SubSystem.Default.listTRS = Wall Inlet Outlet ShockDown ShockUp
+
+# Input: P1 mesh (from MeshUpgrade)
+Simulator.SubSystem.MeshCreator = CFmeshFileReader
+Simulator.SubSystem.CFmeshFileReader.Data.FileName = shockfitting_v2_P1.CFmesh
+Simulator.SubSystem.CFmeshFileReader.Data.CollaboratorNames = FluxReconstruction
+Simulator.SubSystem.CFmeshFileReader.ParReadCFmesh.ParCFmeshFileReader.NbOverlapLayers = 2
+
+Simulator.SubSystem.FluxReconstruction.Builder          = StdBuilder
+Simulator.SubSystem.FluxReconstruction.SpaceRHSJacobCom = RHSJacobNS
+Simulator.SubSystem.FluxReconstruction.ConvSolveCom     = ConvRHSJacobNS
+Simulator.SubSystem.FluxReconstruction.DiffSolveCom     = DiffRHSJacobNS
+Simulator.SubSystem.FluxReconstruction.ConvBndCorrectionCom = ConvBndCorrectionsRHSJacobNSVS
+Simulator.SubSystem.FluxReconstruction.DiffBndCorrectionCom = DiffBndCorrectionsRHSJacobNSVS
+Simulator.SubSystem.FluxReconstruction.TimeRHSJacobCom  = PseudoSteadyTimeRHS
+Simulator.SubSystem.FluxReconstruction.JacobianSparsity = CellCentered
+Simulator.SubSystem.FluxReconstruction.SetupCom         = SetupExtra
+Simulator.SubSystem.FluxReconstruction.ExtrapolateCom   = Null
+
+# No blending, no LLAV
+Simulator.SubSystem.FluxReconstruction.UseBlending   = false
+Simulator.SubSystem.FluxReconstruction.PreProcessCom = Null
+Simulator.SubSystem.FluxReconstruction.LimiterCom    = Null
+
+Simulator.SubSystem.FluxReconstruction.Data.UpdateVar    = Rhoivt
+Simulator.SubSystem.FluxReconstruction.Data.SolutionVar  = Cons
+Simulator.SubSystem.FluxReconstruction.Data.LinearVar    = Roe
+Simulator.SubSystem.FluxReconstruction.Data.DiffusiveVar = Rhoivt
+Simulator.SubSystem.FluxReconstruction.Data.SolToUpdateInUpdateMatTrans = Identity
+
+Simulator.SubSystem.FluxReconstruction.Data.RiemannFlux = AUSMPlusFluxMS2D
+Simulator.SubSystem.FluxReconstruction.Data.AUSMPlusFluxMS2D.choiceA12 = 3
+Simulator.SubSystem.FluxReconstruction.Data.ComputeVolumeForEachState = true
+Simulator.SubSystem.FluxReconstruction.Data.DiffFluxDamping = 1.0
+
+Simulator.SubSystem.FluxReconstruction.Data.SolutionPointDistribution = GaussLegendre
+Simulator.SubSystem.FluxReconstruction.Data.FluxPointDistribution     = GaussLegendre
+Simulator.SubSystem.FluxReconstruction.Data.CorrectionFunctionComputer = VCJH
+Simulator.SubSystem.FluxReconstruction.Data.VCJH.CFactor               = 0.33
+
+# Source term: CNEQ chemistry with analytical Jacobian
+Simulator.SubSystem.FluxReconstruction.SrcTermNames            = CNEQSourceTerm
+Simulator.SubSystem.FluxReconstruction.SrcTermComds            = CNEQSourceTermVS
+Simulator.SubSystem.FluxReconstruction.CNEQSourceTerm.AddJacob = true
+Simulator.SubSystem.FluxReconstruction.CNEQSourceTerm.AnalyticalJacob = true
+
+# Jacobian: freeze after initial computation for speed
+Simulator.SubSystem.FluxReconstruction.Data.FreezeJacob         = false
+Simulator.SubSystem.FluxReconstruction.Data.FreezeJacobIter     = 200000000
+Simulator.SubSystem.FluxReconstruction.Data.FreezeJacobInterval = 100000000
+Simulator.SubSystem.FluxReconstruction.Data.FreezeDiffCoeff     = false
+
+Simulator.SubSystem.FluxReconstruction.FinalizeRHSCom = Null
+
+# ==============================================================================
+# 7) INITIALIZATION — from interpolated P0 solution (embedded in P1 CFmesh)
+# ==============================================================================
+
+# Init from cleaned CFmesh (shockfitting_v2_P1_v2.CFmesh):
+#   Upstream domain: set to uniform freestream (fix interpolation contamination)
+#   Downstream domain: kept from P0 interpolation (post-shock values)
+
+# ==============================================================================
+# 8) BOUNDARY CONDITIONS
+# ==============================================================================
+
+# 5 BCs: Wall, Inlet, Outlet, ShockDown, ShockUp
+Simulator.SubSystem.FluxReconstruction.BcNames = SWalls SInlet SOutlet SShockDown SShockUp
+
+Simulator.SubSystem.FluxReconstruction.Data.BcTypes = \
+  NoSlipWallrvt Dirichlet SuperOutlet DirichletFromFile SuperOutlet
+Simulator.SubSystem.FluxReconstruction.Data.BcNames = \
+  SWalls SInlet SOutlet SShockDown SShockUp
+
+# Wall: isothermal no-slip
+Simulator.SubSystem.FluxReconstruction.SWalls.applyTRS = Wall
+Simulator.SubSystem.FluxReconstruction.Data.SWalls.T = 1000.
+Simulator.SubSystem.FluxReconstruction.Data.SWalls.ChangeToIsoT = 0
+
+# Inlet: freestream Dirichlet
+Simulator.SubSystem.FluxReconstruction.SInlet.applyTRS = Inlet
+Simulator.SubSystem.FluxReconstruction.Data.SInlet.Vars = x y
+Simulator.SubSystem.FluxReconstruction.Data.SInlet.Def  = \
+  0.0001952 0.004956 5590. 0. 1833.
+
+# Outlet: supersonic outflow (extrapolation)
+Simulator.SubSystem.FluxReconstruction.SOutlet.applyTRS = Outlet
+
+# ShockDown: R-H Dirichlet from file (shock fitting BC)
+# Pre-computed R-H post-shock state at each face (frozen gamma, Vs=0).
+# File format: y rho_N rho_N2 u v T (in Rhoivt update variables).
+# Uses standard Dirichlet mirror: ghost = 2*target - interior.
+# This enforces the correct post-shock velocity (~800-1030 m/s normal)
+# instead of extrapolating M from interior (which causes stagnation trap).
+Simulator.SubSystem.FluxReconstruction.SShockDown.applyTRS = ShockDown
+Simulator.SubSystem.FluxReconstruction.Data.SShockDown.InputFileName = RH_postshock.dat
+Simulator.SubSystem.FluxReconstruction.Data.SShockDown.InputVar = Rhoivt
+
+# ShockUp: supersonic outflow from upstream domain toward shock
+Simulator.SubSystem.FluxReconstruction.SShockUp.applyTRS = ShockUp
+
+# Diffusive BCs (all boundaries need diffusive counterparts)
+Simulator.SubSystem.FluxReconstruction.BcNamesDiff = \
+  SWallsDiff SInletDiff SOutletDiff SShockDownDiff SShockUpDiff
+Simulator.SubSystem.FluxReconstruction.SWallsDiff.applyTRS     = Wall
+Simulator.SubSystem.FluxReconstruction.SInletDiff.applyTRS     = Inlet
+Simulator.SubSystem.FluxReconstruction.SOutletDiff.applyTRS    = Outlet
+Simulator.SubSystem.FluxReconstruction.SShockDownDiff.applyTRS = ShockDown
+Simulator.SubSystem.FluxReconstruction.SShockUpDiff.applyTRS   = ShockUp
+
+# ==============================================================================
+# 9) STABILIZATION — Entropy Filtering (standalone)
+# ==============================================================================
+
+Simulator.SubSystem.FluxReconstruction.PhysicalityCom = EntropyFilteringVS
+Simulator.SubSystem.FluxReconstruction.EntropyFilteringVS.MinDensity     = 1.0e-8
+Simulator.SubSystem.FluxReconstruction.EntropyFilteringVS.MinTemperature = 100.0
+Simulator.SubSystem.FluxReconstruction.EntropyFilteringVS.EntropyTol     = 1e-6
+Simulator.SubSystem.FluxReconstruction.EntropyFilteringVS.BisectionIters = 20
+Simulator.SubSystem.FluxReconstruction.EntropyFilteringVS.CheckFluxPnts  = true
+Simulator.SubSystem.FluxReconstruction.EntropyFilteringVS.Active         = true
+Simulator.SubSystem.FluxReconstruction.EntropyFilteringVS.ShowRate       = 5
+
+# ==============================================================================
+# 10) POST-PROCESSING: Wall heat flux + Shock velocity diagnostic
+# ==============================================================================
+
+# NOTE: in-solver ComputeShockVelocity diagnostic is NOT available in this build.
+# Shock velocity Vs is computed post-hoc by shock_fitting_loop/step1_compute_new_shock_contour.py
+Simulator.SubSystem.DataPostProcessing      = DataProcessing
+Simulator.SubSystem.DataPostProcessingNames = WallHeatFlux
+
+Simulator.SubSystem.WallHeatFlux.Comds       = NavierStokesSkinFrictionHeatFRNEQ
+Simulator.SubSystem.WallHeatFlux.Names       = SkinFriction
+Simulator.SubSystem.WallHeatFlux.ProcessRate = 1000
+
+Simulator.SubSystem.WallHeatFlux.SkinFriction.applyTRS = Wall
+Simulator.SubSystem.WallHeatFlux.SkinFriction.rhoInf   = 0.0051512
+Simulator.SubSystem.WallHeatFlux.SkinFriction.TInf     = 1833.0
+Simulator.SubSystem.WallHeatFlux.SkinFriction.uInf     = 5590.0
+Simulator.SubSystem.WallHeatFlux.SkinFriction.pInf     = 2908.0
+
+Simulator.SubSystem.WallHeatFlux.SkinFriction.TID = 4
+Simulator.SubSystem.WallHeatFlux.SkinFriction.UID = 2
+Simulator.SubSystem.WallHeatFlux.SkinFriction.VID = 3
+
+Simulator.SubSystem.WallHeatFlux.SkinFriction.AppendIter     = true
+Simulator.SubSystem.WallHeatFlux.SkinFriction.OutputFileWall = wall_heatflux.dat

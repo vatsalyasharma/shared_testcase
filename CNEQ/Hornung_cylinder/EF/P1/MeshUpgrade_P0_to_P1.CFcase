@@ -1,0 +1,79 @@
+################################################################################
+# Mesh upgrade: P0 -> P1 with projected P0 solution (UpgradeInit=true)
+#
+# INPUT:  P0_CNEQ_Q2-iter_34582.CFmesh (converged P0 solution, Q2 geometry)
+# OUTPUT: P1_CNEQ_Q2_from_P0.CFmesh    (P1 solution, Q2 geometry)
+#
+# This upgrades SOL_POLYORDER from 0 to 1, creating 4 solution points
+# per Q2 quad (2x2 Gauss-Legendre) initialized from the P0 cell average.
+#
+# USAGE:
+#   cd testcases/Hornung_N2_p0_NEW/P1_CNEQ
+#   /path/to/coolfluid-solver --scase MeshUpgrade_P0_to_P1.CFcase
+################################################################################
+
+CFEnv.ExceptionLogLevel    = 1000
+CFEnv.DoAssertions         = true
+CFEnv.AssertionDumps       = true
+CFEnv.AssertionThrows      = true
+CFEnv.AssertThrows         = true
+CFEnv.AssertDumps          = true
+CFEnv.ExceptionDumps       = true
+CFEnv.ExceptionOutputs     = true
+CFEnv.RegistSignalHandlers = false
+CFEnv.OnlyCPU0Writes       = false
+CFEnv.ErrorOnUnusedConfig  = false
+
+Simulator.Modules.Libs = \
+  libShapeFunctions libCFmeshFileWriter libCFmeshFileReader \
+  libParaViewWriter libTecplotWriter \
+  libNEQ libFluxReconstructionMethod libFluxReconstructionNavierStokes \
+  libFluxReconstructionNEQ libForwardEuler libPetscI \
+  libGmsh2CFmesh libNavierStokes libGambit2CFmesh \
+  libPlatoI
+
+Simulator.Paths.ModulesDir = /mnt/c/codes/COOLFluiD/COOLFluiD-merged/optim/dso
+Simulator.Paths.WorkingDir = ./
+Simulator.Paths.ResultsDir = ./
+
+##################################################################
+## SubSystemMesh only creates the mesh and upgrades it serially ##
+##################################################################
+
+Simulator.SubSystems     = SubSysMesh
+Simulator.SubSystemTypes = OnlyMeshSubSystem
+Simulator.SubSysMesh.Namespaces = MeshNamespace
+Simulator.SubSysMesh.Ranks = 0:0
+Simulator.SubSysMesh.MeshNamespace.MeshData = MeshMeshData
+Simulator.SubSysMesh.MeshNamespace.SubSystemStatus = MeshSubSystemStatus
+
+Simulator.SubSysMesh.MeshNamespace.PhysicalModelType = NavierStokes2DNEQ
+Simulator.SubSysMesh.NavierStokes2DNEQ.PropertyLibrary    = Plato
+Simulator.SubSysMesh.NavierStokes2DNEQ.Plato.mixtureName  = nitrogen2
+Simulator.SubSysMesh.NavierStokes2DNEQ.Plato.reactionName = nitrogen2
+Simulator.SubSysMesh.NavierStokes2DNEQ.Plato.transfName   = empty
+Simulator.SubSysMesh.NavierStokes2DNEQ.Plato.path         = /mnt/c/codes/COOLFluiD/ToSend/PLATO/plato_database-main_feb26/database-main
+Simulator.SubSysMesh.NavierStokes2DNEQ.Plato.Xtol         = 1.e-10
+Simulator.SubSysMesh.NavierStokes2DNEQ.nbSpecies          = 2
+Simulator.SubSysMesh.NavierStokes2DNEQ.nbEulerEqs         = 3
+Simulator.SubSysMesh.NavierStokes2DNEQ.nbVibEnergyEqs     = 0
+
+Simulator.SubSysMesh.MeshMeshData.listTRS = Wall Inlet Outlet InnerCells
+Simulator.SubSysMesh.MeshMeshData.Namespaces = MeshNamespace
+
+# Output: P1 mesh with projected P0 solution
+Simulator.SubSysMesh.OutputFormat = CFmesh
+Simulator.SubSysMesh.CFmesh.FileName = sample_4block_v17_P1_from_P0_CNEQ.CFmesh
+Simulator.SubSysMesh.CFmesh.WriteSol = WriteSolution
+Simulator.SubSysMesh.CFmesh.Namespace = MeshNamespace
+
+# Input: converged P0 solution
+Simulator.SubSysMesh.MeshCreator = CFmeshFileReader
+Simulator.SubSysMesh.CFmeshFileReader.Data.FileName = sample_v17_P0_CNEQ_Q2_10iter.CFmesh
+
+# Upgrade: P0 -> P1 solution, keep Q2 geometry
+Simulator.SubSysMesh.SpaceMethod = Null
+Simulator.SubSysMesh.Null.Builder = MeshUpgrade
+Simulator.SubSysMesh.Null.MeshUpgrade.PolynomialOrder = P1
+Simulator.SubSysMesh.Null.MeshUpgrade.UpgradeInit = true
+Simulator.SubSysMesh.Null.Namespace = MeshNamespace

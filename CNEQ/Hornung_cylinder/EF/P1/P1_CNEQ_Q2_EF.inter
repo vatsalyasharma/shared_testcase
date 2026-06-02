@@ -1,0 +1,48 @@
+# ============================================================
+# INTERACTIVE PARAMETER CONTROL -- P1 CNEQ (Entropy Filtering)
+# Edit this file while the solver is running.
+# The solver reads it every iteration and applies changes.
+# ============================================================
+
+# --- CFL ---
+# Stabilization-first setting for current run (Res[2]/Res[4] drift control)
+Simulator.SubSystem.NewtonIterator.Data.CFL.Interactive.CFL = 0.5
+# Ramp guide (manual): 0.05 -> 0.08 -> 0.10 -> 0.15
+# Only step up after ~200-300 iters with flat/decreasing Res[2], Res[4]
+
+# --- NEWTON SOLVER ---
+# Relaxation factor (0-1, lower = more damped)
+Simulator.SubSystem.NewtonIterator.StdUpdateSol.Relaxation = 0.5
+# Emergency damping if oscillations continue:
+# Simulator.SubSystem.NewtonIterator.StdUpdateSol.Relaxation = 0.25
+
+# --- JACOBIAN FREEZE ---
+# EF uses FreezeJacob=false in CFcase, so these are inactive initially.
+# If you switch to FreezeJacob=true (requires restart), these take effect.
+Simulator.SubSystem.FluxReconstruction.Data.FreezeJacobIter = 1#2000000
+Simulator.SubSystem.FluxReconstruction.Data.FreezeJacobInterval = 100000000
+
+# --- WALL BC ---
+# Wall temperature [K]
+Simulator.SubSystem.FluxReconstruction.Data.SWalls.T = 1000.
+# Iteration to switch to isothermal (0 = isothermal from start)
+Simulator.SubSystem.FluxReconstruction.Data.SWalls.ChangeToIsoT = 0
+
+# --- LINEAR SOLVER ---
+# Max Krylov iterations per Newton step
+Simulator.SubSystem.NewtonIteratorLSS.Data.MaxIter = 1500
+
+# --- CONVERGENCE ---
+# Target residual norm (log10)
+Simulator.SubSystem.AbsoluteNormAndMaxIter.AbsNorm = -8.0
+# Max iterations
+Simulator.SubSystem.AbsoluteNormAndMaxIter.MaxIter = 2000000000
+
+# --- OUTPUT ---
+# Save rate for CFmesh snapshots
+Simulator.SubSystem.CFmesh.SaveRate = 20000
+Simulator.SubSystem.ParaView.SaveRate = 20000
+
+# --- STOP ---
+# Set to 1 to force-stop the simulation gracefully
+# Simulator.SubSystem.StopSimulation = 0

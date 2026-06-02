@@ -1,0 +1,60 @@
+################################################################################
+# Dedicated MESH-UPGRADE case (flat plate, gamma-alpha, FR solution order P0).
+#
+# Reads the base (Gmsh) flat-plate mesh and upgrades it to FR solution order P0,
+# writing  flatPlateGReKLogOUpgraded.CFmesh  INTO THIS (P0) folder
+# (WorkingDir = ResultsDir = "."), so the solver cases in this folder can read
+# the correct P0 mesh directly.
+#
+# Run from inside this folder:
+#   ./coolfluid-solver --scase ./meshUpgrade_flatPlate_T3A_P0.CFcase
+################################################################################
+
+CFEnv.ExceptionLogLevel    = 1000
+CFEnv.DoAssertions         = true
+CFEnv.AssertionDumps       = true
+CFEnv.AssertionThrows      = true
+CFEnv.AssertThrows         = true
+CFEnv.AssertDumps          = true
+CFEnv.ExceptionDumps       = false
+CFEnv.ExceptionOutputs     = false
+CFEnv.RegistSignalHandlers = false
+CFEnv.OnlyCPU0Writes       = false
+
+# Libraries (same set as the solver case; mesh upgrade needs libMeshToolsFR)
+Simulator.Modules.Libs = libCFmeshFileWriter libCFmeshFileReader libParaViewWriter libTecplotWriter libNavierStokes libFluxReconstructionMethod libFluxReconstructionNavierStokes libNewtonMethod libPetscI libGmsh2CFmesh libKOmega libFluxReconstructionKOmega libAeroCoefFR libMeshToolsFVM libForwardEuler libMeshToolsFR libGReKO libFluxReconstructionGReKO libGammaAlpha libFluxReconstructionGammaAlpha
+
+# Write the upgraded mesh into THIS folder
+Simulator.Paths.WorkingDir = .
+Simulator.Paths.ResultsDir = .
+
+# Only the mesh-upgrade subsystem (no flow solver)
+Simulator.SubSystems     = SubSysMesh
+Simulator.SubSystemTypes = OnlyMeshSubSystem
+
+Simulator.SubSysMesh.Namespaces = MeshNamespace
+Simulator.SubSysMesh.Ranks = 0:0
+Simulator.SubSysMesh.MeshNamespace.MeshData = MeshMeshData
+Simulator.SubSysMesh.MeshNamespace.SubSystemStatus = MeshSubSystemStatus
+Simulator.SubSysMesh.MeshNamespace.PhysicalModelType = NavierStokes2DGammaAlpha
+Simulator.SubSysMesh.MeshMeshData.listTRS = InnerFaces Wall Mirror Inlet Outlet
+Simulator.SubSysMesh.MeshMeshData.Namespaces = MeshNamespace
+
+# Output: the upgraded CFmesh, written to WorkingDir/ResultsDir = "."
+Simulator.SubSysMesh.OutputFormat = CFmesh
+Simulator.SubSysMesh.CFmesh.FileName = flatPlateGReKLogOUpgraded.CFmesh
+Simulator.SubSysMesh.CFmesh.WriteSol = WriteSolution
+Simulator.SubSysMesh.CFmesh.Namespace = MeshNamespace
+
+# Input: base Gmsh mesh (the .msh sits next to this file)
+Simulator.SubSysMesh.MeshCreator = CFmeshFileReader
+Simulator.SubSysMesh.CFmeshFileReader.Data.FileName = GReKLogOFlatPlateFiner5e-5.CFmesh
+Simulator.SubSysMesh.CFmeshFileReader.Namespace = MeshNamespace
+Simulator.SubSysMesh.CFmeshFileReader.convertFrom = Gmsh2CFmesh
+
+# Mesh upgrade to FR solution polynomial order P0
+Simulator.SubSysMesh.SpaceMethod = Null
+Simulator.SubSysMesh.Null.Builder = MeshUpgrade
+Simulator.SubSysMesh.Null.MeshUpgrade.PolynomialOrder = P0
+#Simulator.SubSysMesh.Null.MeshUpgrade.UpgradeInit = true
+Simulator.SubSysMesh.Null.Namespace = MeshNamespace

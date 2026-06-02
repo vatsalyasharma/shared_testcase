@@ -1,0 +1,378 @@
+################################################################################
+# 
+# This COOLFluiD CFcase file tests: 
+# 
+# FR, VCJH, NS2D, Backward Euler, mesh with curved quads, 
+# Lax-Friedrichs scheme, wall BCs and Dirichlet BC 
+#
+################################################################################
+#
+# Comments begin with "#"
+# Meta Comments begin with triple "#"
+#
+### Residual = -2.85559
+
+#Vatsalya: P1 solver-only restart case using the P0 physicality-VS solution upgraded by meshUpgrade_flatPlate_T3A_P1_fromP0_physVS.CFcase.
+#Vatsalya: Keep this solver case separate from mesh upgrade so reruns do not silently overwrite the upgraded restart mesh.
+
+CFEnv.ExceptionLogLevel    = 1000
+CFEnv.DoAssertions         = true
+CFEnv.AssertionDumps       = true
+CFEnv.AssertionThrows      = true
+CFEnv.AssertThrows         = true
+CFEnv.AssertDumps          = true
+CFEnv.ExceptionDumps       = false
+CFEnv.ExceptionOutputs     = false
+CFEnv.RegistSignalHandlers = false
+CFEnv.OnlyCPU0Writes = false
+
+#CFEnv.TraceToStdOut = true
+
+# SubSystem Modules
+Simulator.Modules.Libs = libCFmeshFileWriter libCFmeshFileReader libParaViewWriter libTecplotWriter libNavierStokes libFluxReconstructionMethod libFluxReconstructionNavierStokes libNewtonMethod libPetscI libGmsh2CFmesh libKOmega libFluxReconstructionKOmega libAeroCoefFR libMeshToolsFVM libForwardEuler libMeshToolsFR libGReKO libFluxReconstructionGReKO libGammaAlpha libFluxReconstructionGammaAlpha
+
+###################################
+# SubSystem Parameters
+Simulator.Paths.WorkingDir = .
+#Vatsalya: Write P1 restart results into the P1 folder; the P0 restart data is read from ../P0 and is not modified.
+#Vatsalya: OLD results folder contains the first P1-from-P0 attempt that stopped at the wall omega assertion; use a fresh folder for the corrected P1 wall-distance run.
+#Simulator.Paths.ResultsDir = ./fp_t3a_p1_impl_VS_fromP0
+#Vatsalya: OLD result folder kept for the failed geometric P1 wall-distance test, which still hit the wall omega assertion.
+#Simulator.Paths.ResultsDir = ./fp_t3a_p1_impl_VS_fromP0_wallOmegaP1
+#Vatsalya: Write the next P1 restart smoke test separately after switching to the reference P1 physicality-VS wall distance.
+#Simulator.Paths.ResultsDir = ./fp_t3a_p1_impl_VS_fromP0_refP1WallDist
+#Vatsalya: The reference wall distance alone still failed; this run also allows K=0 from the P0 restart at no-slip wall-adjacent states.
+Simulator.Paths.ResultsDir = ./fp_t3a_p1_impl_VS_fromP0_refP1WallDist_kFloor0
+#Vatsalya: Direct coolfluid-solver launches need the module directory; otherwise libCFmeshFileWriter.so is not found before the testcase runs.
+Simulator.Paths.ModulesDir = /mnt/c/codes/COOLFluiD/COOLFluiD-merged/optim/dso
+
+##################################################################
+## Solver only: mesh upgrade is in the separate MeshUpgrade case ##
+##################################################################
+
+#Vatsalya: OLD combined mesh+solver activation would re-upgrade inside every solver run; use the separate mesh-upgrade testcase first.
+#Simulator.SubSystems     = SubSysMesh SubSystem
+#Simulator.SubSystemTypes = OnlyMeshSubSystem StandardSubSystem
+#Vatsalya: Solver-only restart path reading the already-upgraded P1 CFmesh carrying the P0 solution.
+Simulator.SubSystems     = SubSystem
+Simulator.SubSystemTypes = StandardSubSystem
+
+#Vatsalya: OLD inactive SubSysMesh mesh-upgrade block is commented out because this solver case must be like the CNEQ cases: read only the P1 CFmesh produced by meshUpgrade_flatPlate_T3A_P1_fromP0_physVS.CFcase, not re-upgrade the P0 restart during the solver run.
+#Simulator.SubSysMesh.Namespaces = MeshNamespace
+#Simulator.SubSysMesh.Ranks = 0:0
+#Simulator.SubSysMesh.MeshNamespace.MeshData = MeshMeshData
+#Simulator.SubSysMesh.MeshNamespace.SubSystemStatus = MeshSubSystemStatus
+#Simulator.SubSysMesh.MeshNamespace.PhysicalModelType = NavierStokes2DGammaAlpha #NavierStokes2DGReKLogO #NavierStokes2DKLogOmega #
+#Simulator.SubSysMesh.MeshMeshData.listTRS = InnerFaces Wall Mirror Inlet Outlet
+#Simulator.SubSysMesh.MeshMeshData.Namespaces = MeshNamespace
+#Simulator.SubSysMesh.OutputFormat = CFmesh
+#Simulator.SubSysMesh.CFmesh.FileName = flatPlateGReKLogOUpgraded_fromP0_physVS_P1.CFmesh
+#Simulator.SubSysMesh.CFmesh.WriteSol = WriteSolution
+#Simulator.SubSysMesh.CFmesh.Namespace = MeshNamespace
+#Simulator.SubSysMesh.MeshCreator = CFmeshFileReader
+#Simulator.SubSysMesh.CFmeshFileReader.Data.FileName = GReKLogOFlatPlateFiner5e-5.CFmesh #GAlphaFlatPlate3.CFmesh #GReKLogOFlatPlate143.CFmesh #GAlphaFlatPlate2.CFmesh #GReKLogOFlatPlate.CFmesh #P0NewMeshStall.CFmesh #SAFlatPlateNew.CFmesh #
+#Simulator.SubSysMesh.CFmeshFileReader.Data.FileName = ../P0/fp_t3a_p0_impl_VS_converge_mpi4/flatPlateGReKLogOCoarse_physVS-iter_16000.CFmesh
+#Simulator.SubSysMesh.CFmeshFileReader.Namespace = MeshNamespace
+#Simulator.SubSysMesh.CFmeshFileReader.convertFrom = Gmsh2CFmesh
+#Simulator.SubSysMesh.SpaceMethod = Null
+#Simulator.SubSysMesh.Null.Builder = MeshUpgrade
+#Simulator.SubSysMesh.Null.MeshUpgrade.PolynomialOrder = P1
+#Simulator.SubSysMesh.Null.MeshUpgrade.UpgradeInit = true
+#Simulator.SubSysMesh.Null.Namespace = MeshNamespace
+
+##################################
+## SubSystem runs the FR solver ##
+##################################
+
+###################################
+Simulator.SubSystem.Default.PhysicalModelType = NavierStokes2DGammaAlpha #NavierStokes2DGReKLogO #NavierStokes2DKLogOmega #
+Simulator.SubSystem.NavierStokes2DGammaAlpha.refValues  = 1.0e5 5.4 5.4 290.3135154 5.3888e-2 5.54756 0.99 13.2865 #4.763286e-2 5.42417 0.99 12.544849 #168.7992 #4.763286e-6 -3.7869 #
+Simulator.SubSystem.NavierStokes2DGammaAlpha.refLength  = 1.0
+
+# The following inf values are necessary for gamma-alpha!!!
+Simulator.SubSystem.NavierStokes2DGammaAlpha.ConvTerm.machInf = 0.01580958
+Simulator.SubSystem.NavierStokes2DGammaAlpha.ConvTerm.uInf = 5.4
+Simulator.SubSystem.NavierStokes2DGammaAlpha.ConvTerm.pInf = 1.0e5
+
+# Compute the Wall distance
+Simulator.SubSystem.DataPreProcessing = DataProcessing
+Simulator.SubSystem.DataPreProcessingNames = DataProcessing1
+#Vatsalya: OLD workaround kept because generic ComputeWallDistance is rank-local in MPI; ranks without Wall nodes can keep wallDistance near 1e100.
+#Simulator.SubSystem.DataProcessing1.Comds = ComputeWallDistance
+#Vatsalya: Use the fixed FR-MPI wall-distance command so all ranks receive wall-face geometry.
+Simulator.SubSystem.DataProcessing1.Comds = ComputeWallDistanceVectorFRMPI
+Simulator.SubSystem.DataProcessing1.Names = WallDistance
+Simulator.SubSystem.DataProcessing1.WallDistance.BoundaryTRS = Wall
+Simulator.SubSystem.DataProcessing1.WallDistance.OutputFile = distances.dat
+Simulator.SubSystem.DataProcessing1.RunAtSetup = true
+Simulator.SubSystem.DataProcessing1.SkipFirstIteration = true
+Simulator.SubSystem.DataProcessing1.ProcessRate = 100000000000000
+
+# Post process the data to compute the skin friction and y+
+#Simulator.SubSystem.DataPostProcessing = DataProcessing
+#Simulator.SubSystem.DataPostProcessingNames = DataProcessing2
+#Simulator.SubSystem.DataProcessing2.Comds = NavierStokesSATruncateK
+#Simulator.SubSystem.DataProcessing2.Names = SATruncateK
+
+###################################
+Simulator.SubSystem.OutputFormat        = CFmesh ParaView Tecplot 
+Simulator.SubSystem.CFmesh.FileName     = flatPlateGReKLogOCoarse_physVS_P1_fromP0.CFmesh
+Simulator.SubSystem.CFmesh.SaveRate = 1000
+Simulator.SubSystem.CFmesh.AppendTime = false
+Simulator.SubSystem.CFmesh.AppendIter = true
+Simulator.SubSystem.CFmesh.ParWriteSol = ParWriteSolution
+
+Simulator.SubSystem.ParaView.FileName    = flatPlateGReKLogOCoarse_physVS_P1_fromP0.vtu
+Simulator.SubSystem.ParaView.Data.updateVar = Puvt
+Simulator.SubSystem.ParaView.WriteSol = WriteSolutionHighOrder
+Simulator.SubSystem.ParaView.SaveRate = 1000
+Simulator.SubSystem.ParaView.AppendTime = false
+Simulator.SubSystem.ParaView.AppendIter = false #false
+Simulator.SubSystem.ParaView.Data.printExtraValues = false #true
+#Simulator.SubSystem.ParaView.Data.DataHandleOutput.SocketNames = wallDistance wallShearStressVelocity
+#Simulator.SubSystem.ParaView.Data.DataHandleOutput.VariableNames = wallDistance wallShearStressVelocity
+
+Simulator.SubSystem.Tecplot.FileName    = flatPlateGReKLogOCoarse_physVS_P1_fromP0.plt
+Simulator.SubSystem.Tecplot.Data.updateVar = Puvt
+#Vatsalya: Restore high-order FR Tecplot output; this writes one solution file per MPI rank because there is no parallel high-order Tecplot writer in this path.
+Simulator.SubSystem.Tecplot.WriteSol = WriteSolutionHighOrder
+#Vatsalya: OLD single-file experiment kept below; ParWriteSolutionBlock writes FV-style block output, and CCSocket makes FR fields cell-centered rather than high-order FR output.
+#Simulator.SubSystem.Tecplot.WriteSol = ParWriteSolutionBlock
+#Simulator.SubSystem.Tecplot.ParWriteSolutionBlock.NbWriters = 1
+#Simulator.SubSystem.Tecplot.ParWriteSolutionBlock.OnlyNodal = false
+Simulator.SubSystem.Tecplot.SaveRate = 500
+Simulator.SubSystem.Tecplot.AppendTime = false
+#Vatsalya: Keep the previous high-order Tecplot iteration suffix behavior.
+Simulator.SubSystem.Tecplot.AppendIter = true
+#Vatsalya: OLD single-file experiment disabled iteration/rank suffixes; this is not safe for non-parallel WriteSolutionHighOrder in MPI.
+#Simulator.SubSystem.Tecplot.AppendIter = false
+#Simulator.SubSystem.Tecplot.AppendRank = false
+Simulator.SubSystem.Tecplot.Data.printExtraValues = true #false #
+#Vatsalya: Restore state-local FR data handles for WriteSolutionHighOrder; wallDistance is renamed on output to avoid the duplicate output-varset name.
+Simulator.SubSystem.Tecplot.Data.DataHandleOutput.SocketNames = wallShearStressVelocity MInfLocal uInfLocal TInfLocal TuInfLocal alphaDiff wallDistance #fOnset fLength #gammaEff gammaSep outputPP wallDistance
+Simulator.SubSystem.Tecplot.Data.DataHandleOutput.VariableNames = wallShearStressVelocity MInfLocal uInfLocal TInfLocal TuInfLocal alphaDiff wallDistanceComputed #fOnset fLength #gammaEff gammaSep outputPP wallDistance
+#Vatsalya: OLD cell-centered handles were only for the rejected ParWriteSolutionBlock single-file experiment.
+#Simulator.SubSystem.Tecplot.Data.DataHandleOutput.CCSocketNames = wallShearStressVelocity MInfLocal uInfLocal TInfLocal TuInfLocal alphaDiff wallDistance
+#Simulator.SubSystem.Tecplot.Data.DataHandleOutput.CCVariableNames = wallShearStressVelocity MInfLocal uInfLocal TInfLocal TuInfLocal alphaDiff wallDistanceComputed
+
+###################################
+Simulator.SubSystem.StopCondition = RelativeNormAndMaxIter
+#Vatsalya: OLD production limit was too long for this requested validation run.
+#Simulator.SubSystem.RelativeNormAndMaxIter.MaxIter = 1000000 #1000000 #1500
+#Vatsalya: OLD 5000-step cap kept from the validation run; it stopped before all residual components reached -4.
+#Simulator.SubSystem.RelativeNormAndMaxIter.MaxIter = 5000 #1000000 #1500
+#Vatsalya: Restore high iteration limit so the convergence run can continue until the -4 residual target is reached.
+Simulator.SubSystem.RelativeNormAndMaxIter.MaxIter = 1000000 #1000000 #1500
+Simulator.SubSystem.RelativeNormAndMaxIter.RelativeNorm = -4
+
+#######IMPLICIT#############
+
+Simulator.SubSystem.LinearSystemSolver = PETSC
+Simulator.SubSystem.LSSNames = NewtonIteratorLSS
+Simulator.SubSystem.NewtonIteratorLSS.Data.PCType = PCASM
+Simulator.SubSystem.NewtonIteratorLSS.Data.KSPType = KSPGMRES
+Simulator.SubSystem.NewtonIteratorLSS.Data.MatOrderingType = MATORDERING_RCM
+Simulator.SubSystem.NewtonIteratorLSS.Data.SaveSystemToFile = false
+Simulator.SubSystem.NewtonIteratorLSS.Data.Output = false
+Simulator.SubSystem.NewtonIteratorLSS.Data.MaxIter = 1000
+
+Simulator.SubSystem.NewtonIteratorLSS.Data.RelativeTolerance = 1e-4
+Simulator.SubSystem.NewtonIterator.Data.L2.MonitoredVarID = 1
+Simulator.SubSystem.NewtonIterator.Data.FilterState = MinMax #Max #
+Simulator.SubSystem.NewtonIterator.Data.MinMax.maskIDs = 1 0 0 1 1 1 1 1
+Simulator.SubSystem.NewtonIterator.Data.MinMax.minValues = 0.0 0 0 0.0 0.0 0.0 0.01 0.1
+Simulator.SubSystem.NewtonIterator.Data.MinMax.maxValues = 1.0e10 0 0 1.0e10 1.0e10 1.0e5 0.99 1.0e5
+
+Simulator.SubSystem.ConvergenceMethod = NewtonIterator
+#Simulator.SubSystem.NewtonIterator.UpdateSol = TurbUpdateSol
+Simulator.SubSystem.NewtonIterator.TurbUpdateSol.KInlet = 1.0e-12 #1.0e-7
+Simulator.SubSystem.NewtonIterator.TurbUpdateSol.OmegaInlet = 1.0 #200.0
+#Simulator.SubSystem.NewtonIterator.Data.CFL.Value = 100.
+Simulator.SubSystem.NewtonIterator.Data.CFL.ComputeCFL = Function
+Simulator.SubSystem.NewtonIterator.Data.CFL.Function.Def = if(i<10,1.0,min(50.0,cfl*1.001)) #if(i<10,10.0,min(50.0,cfl*1.01)) #if(i<10,1.0,min(10.0,cfl*1.001)) #if(i<10,0.5,min(3.0,cfl*1.0001)) #
+Simulator.SubSystem.NewtonIterator.AbsoluteNormAndMaxIter.MaxIter = 1
+Simulator.SubSystem.NewtonIterator.Data.PrintHistory = true
+Simulator.SubSystem.NewtonIterator.ConvergenceFile = convergenceFlatPlateGReKLogOCoarse_physVS_P1_fromP0.plt
+
+#######EXPLICIT############
+
+#Simulator.SubSystem.ConvergenceMethod = FwdEuler
+Simulator.SubSystem.FwdEuler.Data.CFL.Value = 0.1
+Simulator.SubSystem.FwdEuler.ShowRate        = 20
+Simulator.SubSystem.FwdEuler.ConvRate        = 20
+
+###################################
+Simulator.SubSystem.SpaceMethod = FluxReconstruction
+
+Simulator.SubSystem.Default.listTRS = InnerFaces Mirror Wall Inlet Outlet
+
+Simulator.SubSystem.MeshCreator = CFmeshFileReader
+#Vatsalya: OLD P0 mesh filename is commented because this solver must read the P1 mesh produced by meshUpgrade_flatPlate_T3A_P1_fromP0_physVS.CFcase.
+#Simulator.SubSystem.CFmeshFileReader.Data.FileName = flatPlateGReKLogOUpgraded.CFmesh #P0NoPCorr.CFmesh #flatPlateGReKLogOTest-iter_23000.CFmesh #flatPlateGReKLogO-iter_1000.CFmesh #flatPlateGReKLogO-iter_15000.CFmesh #flatPlateGReKLogO-iter_500.CFmesh #
+Simulator.SubSystem.CFmeshFileReader.Data.FileName = flatPlateGReKLogOUpgraded_fromP0_physVS_P1.CFmesh
+Simulator.SubSystem.CFmeshFileReader.Data.CollaboratorNames = FluxReconstruction
+#Vatsalya: Match the CNEQ MPI restart cases when reading the already-upgraded high-order FR CFmesh.
+Simulator.SubSystem.CFmeshFileReader.ParReadCFmesh.ParCFmeshFileReader.NbOverlapLayers = 2
+
+###################################
+# choose which builder we use
+Simulator.SubSystem.FluxReconstruction.Builder = StdBuilder
+Simulator.SubSystem.FluxReconstruction.SpaceRHSJacobCom = RHSJacobGammaAlpha #RHSJacobNS #RHSNS #
+Simulator.SubSystem.FluxReconstruction.ConvSolveCom = ConvDiffRHSJacobTurb #ConvDiffRHSJacobNS #ConvRHSJacobNS #ConvRHSNS #
+Simulator.SubSystem.FluxReconstruction.DiffSolveCom = Null #DiffRHSJacobNS #DiffRHSNS #
+Simulator.SubSystem.FluxReconstruction.SetupCom = SetupExtra
+
+Simulator.SubSystem.FluxReconstruction.Data.FreezeJacob = false #true #
+Simulator.SubSystem.FluxReconstruction.Data.FreezeJacobIter = 10
+Simulator.SubSystem.FluxReconstruction.Data.FreezeJacobInterval = 10
+
+Simulator.SubSystem.FluxReconstruction.ConvDiffRHSJacobTurb.AddRiemannToGradJacob = true #false #
+Simulator.SubSystem.FluxReconstruction.ConvDiffRHSJacobTurb.AddRiemannToGradCrossCellJacob = true #false #
+Simulator.SubSystem.FluxReconstruction.ConvDiffRHSJacobTurb.AddFluxToGradCrossCellJacob = true #false #
+
+#####Comment in explicit#####
+Simulator.SubSystem.FluxReconstruction.TimeRHSJacobCom = PseudoSteadyTimeRHS #StdTimeRHSJacob
+Simulator.SubSystem.FluxReconstruction.JacobianSparsity = CellCentered
+Simulator.SubSystem.FluxReconstruction.FinalizeRHSCom = Null
+Simulator.SubSystem.FluxReconstruction.GammaAlpha2DSourceTerm.AddJacob = true #false #
+#############################
+
+Simulator.SubSystem.FluxReconstruction.ExtrapolateCom = Null
+Simulator.SubSystem.FluxReconstruction.Data.UpdateVar   = Puvt
+Simulator.SubSystem.FluxReconstruction.Data.SolutionVar = Cons
+Simulator.SubSystem.FluxReconstruction.Data.LinearVar   = Roe
+Simulator.SubSystem.FluxReconstruction.Data.DiffusiveVar= SSTPuvt #BSLPuvt #Puvt #
+Simulator.SubSystem.FluxReconstruction.Data.RiemannFlux = AUSMPlusUpFluxTurb2D #LaxFriedrichsFlux #
+Simulator.SubSystem.FluxReconstruction.Data.AUSMPlusUpFluxTurb2D.machInf = 1.0 #0.2 #0.0158
+Simulator.SubSystem.FluxReconstruction.Data.DiffFluxDamping = 1.0
+
+Simulator.SubSystem.FluxReconstruction.Data.SolutionPointDistribution = GaussLegendre
+Simulator.SubSystem.FluxReconstruction.Data.FluxPointDistribution = GaussLegendre
+
+Simulator.SubSystem.FluxReconstruction.Data.CorrectionFunctionComputer = VCJH
+Simulator.SubSystem.FluxReconstruction.Data.VCJH.CFactor = 0.33 #0.33 #0.33 #0.0296296296 
+
+Simulator.SubSystem.FluxReconstruction.SrcTermNames = GammaAlpha2DSourceTerm #KLogOmega2DSourceTerm #
+Simulator.SubSystem.FluxReconstruction.SrcTermComds = GammaAlpha2DSourceTerm #KLogOmega2DSourceTerm #
+
+#Simulator.SubSystem.FluxReconstruction.GammaAlpha2DSourceTerm.LimitProductionTerm = true #false #
+#Simulator.SubSystem.FluxReconstruction.GammaAlpha2DSourceTerm.PGrad = false #true #
+#Simulator.SubSystem.FluxReconstruction.GammaAlpha2DSourceTerm.LimPAlpha = false #true #
+#Simulator.SubSystem.FluxReconstruction.GammaAlpha2DSourceTerm.AnalyticalJacob = true #false #
+#Simulator.SubSystem.FluxReconstruction.GammaAlpha2DSourceTerm.AddUpdateCoeff = false #true #
+#Simulator.SubSystem.FluxReconstruction.GammaAlpha2DSourceTerm.BlockDecoupledJacob = true #false #
+#Simulator.SubSystem.FluxReconstruction.GammaAlpha2DSourceTerm.AddDGammaDAlpha = false
+
+Simulator.SubSystem.FluxReconstruction.GammaAlpha2DSourceTerm.LimitProductionTerm = true #false #
+Simulator.SubSystem.FluxReconstruction.GammaAlpha2DSourceTerm.PGrad = false #true #
+Simulator.SubSystem.FluxReconstruction.GammaAlpha2DSourceTerm.LimPAlpha = false #true #
+Simulator.SubSystem.FluxReconstruction.GammaAlpha2DSourceTerm.AnalyticalJacob = true #false #
+Simulator.SubSystem.FluxReconstruction.GammaAlpha2DSourceTerm.AddUpdateCoeff = false #true #
+Simulator.SubSystem.FluxReconstruction.GammaAlpha2DSourceTerm.BlockDecoupledJacob = true #false #
+Simulator.SubSystem.FluxReconstruction.GammaAlpha2DSourceTerm.AddDGamma = true #false #
+
+###################################
+#Vatsalya: OLD uniform initialization would overwrite the upgraded P0 restart field.
+#Simulator.SubSystem.FluxReconstruction.InitComds = StdInitState #Null #
+#Vatsalya: Use the solution stored in flatPlateGReKLogOUpgraded_fromP0_physVS_P1.CFmesh.
+Simulator.SubSystem.FluxReconstruction.InitComds = Null #StdInitState #
+Simulator.SubSystem.FluxReconstruction.InitNames = InField
+
+Simulator.SubSystem.FluxReconstruction.InField.applyTRS = InnerCells
+Simulator.SubSystem.FluxReconstruction.InField.Vars = x y
+Simulator.SubSystem.FluxReconstruction.InField.Def = 1.0e5 5.4 0.0 290.3135154 5.3888e-2 5.54756 0.99 13.2865 #4.763286e-2 5.42417 0.99 12.544849 #168.7992 #1.0e5 5.4*if(x<0.0,1.0,if(y>=0.005*log(x+1),1.0,y/(0.005*log(x+1)))) 0.0 290.3135154 4.763286e-2 5.42417 if(x<0.0,0.99,if(y>=0.005*log(x+1),0.99,y/(0.005*log(x+1)))) 12.544849 #
+
+Simulator.SubSystem.FluxReconstruction.BcNames = Wall Mirror BcInlet BcOutlet
+Simulator.SubSystem.FluxReconstruction.Mirror.applyTRS = Mirror
+Simulator.SubSystem.FluxReconstruction.Wall.applyTRS = Wall
+Simulator.SubSystem.FluxReconstruction.BcInlet.applyTRS = Inlet
+Simulator.SubSystem.FluxReconstruction.BcOutlet.applyTRS = Outlet
+
+Simulator.SubSystem.FluxReconstruction.BcNamesDiff = WallDiff MirrorDiff BcInletDiff BcOutletDiff
+Simulator.SubSystem.FluxReconstruction.MirrorDiff.applyTRS = Mirror
+Simulator.SubSystem.FluxReconstruction.WallDiff.applyTRS = Wall
+Simulator.SubSystem.FluxReconstruction.BcInletDiff.applyTRS = Inlet
+Simulator.SubSystem.FluxReconstruction.BcOutletDiff.applyTRS = Outlet
+
+#Simulator.SubSystem.FluxReconstruction.PhysicalityCom = PhysicalityEuler2D
+Simulator.SubSystem.FluxReconstruction.PhysicalityEuler2D.CheckInternal = true
+Simulator.SubSystem.FluxReconstruction.PhysicalityEuler2D.MinPressure = 1.0 
+Simulator.SubSystem.FluxReconstruction.PhysicalityEuler2D.MinTemperature = 1.0e-3
+Simulator.SubSystem.FluxReconstruction.PhysicalityEuler2D.MinTurbVars = 1.0e-8 10.0
+Simulator.SubSystem.FluxReconstruction.PhysicalityEuler2D.ShowRate = 1
+
+
+Simulator.SubSystem.FluxReconstruction.Data.BcTypes = BCNoSlipWallGammaAlpha2D  MirrorVelocity BCSubInletTurbUVT2D BCSubOutletTurb2D #BCNoSlipWallTurb2D
+Simulator.SubSystem.FluxReconstruction.Data.BcNames = Wall Mirror BcInlet BcOutlet
+
+Simulator.SubSystem.FluxReconstruction.Data.Wall.KWall = 0.0 #
+#wallDist greatly influences stability: larger value, more stable (less steep omega), but rougher wall. Theoretically wallDist=0 -> omega_wall = infinity
+#Vatsalya: OLD P0-style centroid distance can make log(omega_wall)=log(60*nu/(beta*y^2)) non-positive at P1 wall flux points; P1 Gauss-Legendre first solution point is 0.211324865*dy, with min wall dy=6.17854785772e-5.
+#Simulator.SubSystem.FluxReconstruction.Data.Wall.WallDist = 3.5e-5 #7.0e-5 #3.915e-6 #
+#Vatsalya: OLD geometric P1 distance still failed at BCNoSlipWallGammaAlpha2D omegaWall>0, so use the wall distance from the working P1 physicality-VS case.
+#Simulator.SubSystem.FluxReconstruction.Data.Wall.WallDist = 1.30568e-5
+Simulator.SubSystem.FluxReconstruction.Data.Wall.WallDist = 1.655e-6
+Simulator.SubSystem.FluxReconstruction.Data.Wall.OmegaWallFactor = 1.001 #2.0
+Simulator.SubSystem.FluxReconstruction.Data.Wall.ImposeOmegaWallIter = 0 #1000000000 #1000000000
+
+Simulator.SubSystem.FluxReconstruction.Data.Wall.GammaThreshold = 0.1 #0.15 #0.02 #
+Simulator.SubSystem.FluxReconstruction.Data.Wall.EnforceLaminar = true
+
+Simulator.SubSystem.FluxReconstruction.Data.BcInlet.Vx = 5.4
+Simulator.SubSystem.FluxReconstruction.Data.BcInlet.Vy = 0.0
+Simulator.SubSystem.FluxReconstruction.Data.BcInlet.T = 290.3135154
+Simulator.SubSystem.FluxReconstruction.Data.BcInlet.TurbVars = 5.3888e-2 5.54756 0.99 13.2865 #4.763286e-2 5.42417 0.99 12.544849 #168.7992 #
+
+Simulator.SubSystem.FluxReconstruction.Data.BcOutlet.P = 1.0e5 #9300
+
+###################################
+#DataProcessing
+
+# Post process the data to compute the skin friction
+#Vatsalya: OLD disabled block kept because NavierStokesSkinFrictionHeatFluxFR used to abort in AeroForcesFR::setup() when the FR update var was null during DataProcessing setup.
+#Simulator.SubSystem.DataPostProcessing = DataProcessing
+#Simulator.SubSystem.DataPostProcessingNames = DataProcessing2
+#Simulator.SubSystem.DataProcessing2.Comds = NavierStokesSkinFrictionHeatFluxFR
+#Simulator.SubSystem.DataProcessing2.Names = SkinFriction
+#Simulator.SubSystem.DataProcessing2.ProcessRate = 100
+#Simulator.SubSystem.DataProcessing2.SkinFriction.applyTRS = Wall
+#Simulator.SubSystem.DataProcessing2.SkinFriction.rhoInf = 1.2
+#Simulator.SubSystem.DataProcessing2.SkinFriction.TInf = 290.3135154
+#Simulator.SubSystem.DataProcessing2.SkinFriction.uInf = 5.4
+#Simulator.SubSystem.DataProcessing2.SkinFriction.pInf = 1.0e5
+#Simulator.SubSystem.DataProcessing2.SkinFriction.AppendIter = true
+#Simulator.SubSystem.DataProcessing2.SkinFriction.AppendTime = true
+#Simulator.SubSystem.DataProcessing2.SkipFirstIteration = true
+#Vatsalya: Active block sets DataProcessing2.Data.updateVar = Puvt so the fixed AeroForcesFR has a valid postprocessing update var.
+Simulator.SubSystem.DataPostProcessing = DataProcessing
+Simulator.SubSystem.DataPostProcessingNames = DataProcessing2
+Simulator.SubSystem.DataProcessing2.Data.updateVar = Puvt
+Simulator.SubSystem.DataProcessing2.Comds = NavierStokesSkinFrictionHeatFluxFR
+Simulator.SubSystem.DataProcessing2.Names = SkinFriction
+Simulator.SubSystem.DataProcessing2.ProcessRate = 100
+Simulator.SubSystem.DataProcessing2.SkinFriction.applyTRS = Wall
+Simulator.SubSystem.DataProcessing2.SkinFriction.rhoInf = 1.2
+Simulator.SubSystem.DataProcessing2.SkinFriction.TInf = 290.3135154
+Simulator.SubSystem.DataProcessing2.SkinFriction.uInf = 5.4
+Simulator.SubSystem.DataProcessing2.SkinFriction.pInf = 1.0e5
+Simulator.SubSystem.DataProcessing2.SkinFriction.AppendIter = true
+Simulator.SubSystem.DataProcessing2.SkinFriction.AppendTime = true
+Simulator.SubSystem.DataProcessing2.SkipFirstIteration = true
+
+# ===========================================================================
+# PhysicalityVS variant: accurate Zhang-Shu positivity preservation (post-update,
+# PhysicalityEuler2DVS) added on top of the otherwise-identical original case so
+# the two can be diffed/compared. The Jacobian, BCs, fluxes are unchanged.
+# MinTurbVars order = [K, log(omega), gamma, alpha]; slot 2 is log(omega) (SIGNED):
+# a 0.01 floor only clips omega < ~1.01 (harmless here as omega>1 throughout).
+# Comment the PhysicalityCom line below to fall back to the original behaviour.
+# ===========================================================================
+Simulator.SubSystem.FluxReconstruction.PhysicalityCom = PhysicalityEuler2DVS
+Simulator.SubSystem.FluxReconstruction.PhysicalityEuler2DVS.CheckInternal = true
+Simulator.SubSystem.FluxReconstruction.PhysicalityEuler2DVS.MinDensity = 1.0e-8
+Simulator.SubSystem.FluxReconstruction.PhysicalityEuler2DVS.MinPressure = 1.0
+Simulator.SubSystem.FluxReconstruction.PhysicalityEuler2DVS.MinTemperature = 1.0e-3
+#Vatsalya: OLD K floor forces the upgraded P0 restart's wall-adjacent K=0 states through average limiting before the wall BC, which produced T=0 at a wall flux point.
+#Simulator.SubSystem.FluxReconstruction.PhysicalityEuler2DVS.MinTurbVars = 1.0e-8 0.01 0.0 1.0e-3
+#Vatsalya: Keep log(omega), gamma, and alpha floors, but allow K=0 consistently with KWall=0.0 at the no-slip wall.
+Simulator.SubSystem.FluxReconstruction.PhysicalityEuler2DVS.MinTurbVars = 0.0 0.01 0.0 1.0e-3

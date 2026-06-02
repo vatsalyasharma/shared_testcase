@@ -1,0 +1,19 @@
+# CFL
+Simulator.SubSystem.NewtonIterator.Data.CFL.Interactive.CFL = 0.01
+
+# Newton relaxation (0-1)
+Simulator.SubSystem.NewtonIterator.StdUpdateSol.Relaxation = 0.5
+
+# Jacobian freeze (set to current iter number to freeze)
+Simulator.SubSystem.FluxReconstruction.Data.FreezeJacobIter = 200000000
+
+# Save intervals
+Simulator.SubSystem.CFmesh.SaveRate = 5000
+Simulator.SubSystem.ParaView.SaveRate = 5000
+Simulator.SubSystem.WallHeatFlux.ProcessRate = 5000
+
+# Entropy filtering
+Simulator.SubSystem.FluxReconstruction.EntropyFilteringVS.Active = true
+Simulator.SubSystem.FluxReconstruction.EntropyFilteringVS.EntropyTol = 1e-6
+Simulator.SubSystem.FluxReconstruction.EntropyFilteringVS.MinDensity = 1.0e-8
+Simulator.SubSystem.FluxReconstruction.EntropyFilteringVS.MinTemperature = 100.0

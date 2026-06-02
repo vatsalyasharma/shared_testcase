@@ -1,0 +1,93 @@
+################################################################################
+# Mesh conversion + upgrade for FR P0 with Q2 geometry
+#
+# INPUT:  Q1 Gmsh mesh (.msh with 4-node quads)
+# OUTPUT: CFmesh with SOL_POLYORDER=0, GEOM_POLYORDER=2
+#
+# The MeshUpgrade adds mid-side and center nodes by interpolation,
+# creating Q2 geometry from Q1 input. This avoids negative Jacobians
+# that can occur when Gmsh places Q2 nodes directly on curved boundaries.
+#
+# USAGE:
+#   1. Set CFmeshFileReader.Data.FileName to your Q1 mesh name
+#      (use .CFmesh extension — converter looks for .msh with same basename)
+#   2. Set CFmesh.FileName to desired output name
+#   3. Run from parent dir:
+#      /path/to/coolfluid-solver --scase ./MeshUpgrade_P0_Q2.CFcase \
+#        --ldir /path/to/optim/dso
+#
+# After conversion, check the solver log for:
+#   "NB NEGATIVE JACOB FOUND: N"  — should be 0
+#   "NB NEGATIVE VOLUMES: N"     — should be 0
+# If non-zero, the mesh needs fixing (element quality near curved boundaries).
+################################################################################
+
+CFEnv.ExceptionLogLevel    = 1000
+CFEnv.DoAssertions         = true
+CFEnv.AssertionDumps       = true
+CFEnv.AssertionThrows      = true
+CFEnv.AssertThrows         = true
+CFEnv.AssertDumps          = true
+CFEnv.ExceptionDumps       = true
+CFEnv.ExceptionOutputs     = true
+CFEnv.RegistSignalHandlers = false
+CFEnv.OnlyCPU0Writes       = false
+CFEnv.ErrorOnUnusedConfig  = false
+
+Simulator.Modules.Libs = \
+  libShapeFunctions libCFmeshFileWriter libCFmeshFileReader \
+  libParaViewWriter libTecplotWriter \
+  libNEQ libFluxReconstructionMethod libFluxReconstructionNavierStokes \
+  libFluxReconstructionNEQ libForwardEuler libPetscI \
+  libGmsh2CFmesh libNavierStokes libGambit2CFmesh \
+  libPlatoI libNewtonMethod
+
+Simulator.Paths.ModulesDir = /mnt/c/codes/COOLFluiD/COOLFluiD-merged/optim/dso
+Simulator.Paths.WorkingDir = ./
+Simulator.Paths.ResultsDir = ./
+
+##################################################################
+## SubSystemMesh only creates the mesh and upgrades it serially ##
+##################################################################
+
+Simulator.SubSystems     = SubSysMesh
+Simulator.SubSystemTypes = OnlyMeshSubSystem
+Simulator.SubSysMesh.Namespaces = MeshNamespace
+Simulator.SubSysMesh.Ranks = 0:0
+Simulator.SubSysMesh.MeshNamespace.MeshData = MeshMeshData
+Simulator.SubSysMesh.MeshNamespace.SubSystemStatus = MeshSubSystemStatus
+
+Simulator.SubSysMesh.MeshNamespace.PhysicalModelType = NavierStokes2DNEQ
+
+Simulator.SubSysMesh.NavierStokes2DNEQ.PropertyLibrary    = Plato
+Simulator.SubSysMesh.NavierStokes2DNEQ.Plato.mixtureName  = nitrogen2
+Simulator.SubSysMesh.NavierStokes2DNEQ.Plato.reactionName = nitrogen2
+Simulator.SubSysMesh.NavierStokes2DNEQ.Plato.transfName   = empty
+Simulator.SubSysMesh.NavierStokes2DNEQ.Plato.path         = /mnt/c/codes/COOLFluiD/ToSend/PLATO/plato_database-main_feb26/database-main
+Simulator.SubSysMesh.NavierStokes2DNEQ.Plato.Xtol         = 1.e-10
+Simulator.SubSysMesh.NavierStokes2DNEQ.nbSpecies          = 2
+Simulator.SubSysMesh.NavierStokes2DNEQ.nbEulerEqs         = 3
+Simulator.SubSysMesh.NavierStokes2DNEQ.nbVibEnergyEqs     = 0
+
+Simulator.SubSysMesh.MeshMeshData.listTRS = Wall Inlet Outlet InnerCells
+Simulator.SubSysMesh.MeshMeshData.Namespaces = MeshNamespace
+
+# Output CFmesh
+Simulator.SubSysMesh.OutputFormat = CFmesh
+Simulator.SubSysMesh.CFmesh.FileName = sample_4block_v17_P0_Q2.CFmesh
+Simulator.SubSysMesh.CFmesh.WriteSol = WriteSolution
+Simulator.SubSysMesh.CFmesh.Namespace = MeshNamespace
+
+# Input: Gmsh .msh file (converter replaces .CFmesh -> .msh)
+# CHANGE THIS to your Q1 mesh name (must have .msh in same directory)
+Simulator.SubSysMesh.MeshCreator = CFmeshFileReader
+Simulator.SubSysMesh.CFmeshFileReader.Data.FileName = sample_4block_v17.CFmesh
+
+# MeshUpgrade: P0 solution + Q2 geometry
+Simulator.SubSysMesh.SpaceMethod = Null
+Simulator.SubSysMesh.Null.Builder = MeshUpgrade
+Simulator.SubSysMesh.Null.MeshUpgrade.PolynomialOrder    = P0
+Simulator.SubSysMesh.Null.MeshUpgrade.GeoPolynomialOrder = P2
+Simulator.SubSysMesh.Null.MeshUpgrade.UpgradeInit = false
+
+Simulator.SubSysMesh.Null.Namespace = MeshNamespace

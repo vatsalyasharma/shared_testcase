@@ -1,0 +1,55 @@
+# ============================================================
+# INTERACTIVE PARAMETER CONTROL -- P1 CNEQ (LLAV + ZS, r3v15)
+# Fresh start from P0->P1 UpgradeInit (pressure-based LLAV sensor)
+# Edit this file while the solver is running.
+# The solver reads it every iteration and applies changes.
+# ============================================================
+
+# --- CFL ---
+Simulator.SubSystem.NewtonIterator.Data.CFL.Interactive.CFL = 0.1
+
+# --- NEWTON SOLVER ---
+Simulator.SubSystem.NewtonIterator.StdUpdateSol.Relaxation = 0.5
+
+# --- JACOBIAN FREEZE ---
+#Vatsalya: start unfrozen. Freeze via .inter once eps settles.
+Simulator.SubSystem.FluxReconstruction.Data.FreezeJacobIter = 1#3000000000000
+Simulator.SubSystem.FluxReconstruction.Data.FreezeJacobInterval = 100000000
+
+# --- WALL BC ---
+Simulator.SubSystem.FluxReconstruction.Data.SWalls.T = 1000.
+Simulator.SubSystem.FluxReconstruction.Data.SWalls.ChangeToIsoT = 0
+
+# --- LINEAR SOLVER ---
+Simulator.SubSystem.NewtonIteratorLSS.Data.MaxIter = 1000
+
+# --- CONVERGENCE ---
+Simulator.SubSystem.AbsoluteNormAndMaxIter.AbsNorm = -8.0
+Simulator.SubSystem.AbsoluteNormAndMaxIter.MaxIter = 200000
+
+# --- OUTPUT ---
+Simulator.SubSystem.CFmesh.SaveRate = 10000
+Simulator.SubSystem.ParaView.SaveRate = 10000
+
+# --- STOP ---
+# Simulator.SubSystem.StopSimulation = 0
+
+# ============================================================
+# LLAV CONTROLS (VS provider)
+# ============================================================
+
+#Vatsalya: eps must develop from scratch. Keep unfrozen initially.
+Simulator.SubSystem.FluxReconstruction.ConvDiffLLAVRHSJacobNSVS.TrueFreezeEpsilon = false
+
+Simulator.SubSystem.FluxReconstruction.ConvDiffLLAVRHSJacobNSVS.TemporalRelaxUp   = 0.5
+Simulator.SubSystem.FluxReconstruction.ConvDiffLLAVRHSJacobNSVS.TemporalRelaxDown = 0.1
+
+Simulator.SubSystem.FluxReconstruction.ConvDiffLLAVRHSJacobNSVS.KeepLLAVInJacob = true
+
+Simulator.SubSystem.FluxReconstruction.ConvDiffLLAVRHSJacobNSVS.ShowRate = 5
+
+# --- LLAV TUNING KNOBS (match CFcase defaults) ---
+Simulator.SubSystem.FluxReconstruction.ConvDiffLLAVRHSJacobNSVS.Peclet  = 30.0
+Simulator.SubSystem.FluxReconstruction.ConvDiffLLAVRHSJacobNSVS.S0      = -3.0
+Simulator.SubSystem.FluxReconstruction.ConvDiffLLAVRHSJacobNSVS.Kappa   = 0.5
+Simulator.SubSystem.FluxReconstruction.ConvDiffLLAVRHSJacobNSVS.MinEpsilon = 0.0

@@ -1,0 +1,61 @@
+################################################################################
+#Mesh-upgrade/restart-preparation case for P1.
+#Reads the latest saved P0 physicality-VS CFmesh solution and writes a P1 FR mesh carrying the interpolated P0 state.
+#Run from inside this folder before launching flatplate_GammaAlpha_T3A_P1_implicit_physicalityVS_fromP0.CFcase.
+################################################################################
+
+CFEnv.ExceptionLogLevel    = 1000
+CFEnv.DoAssertions         = true
+CFEnv.AssertionDumps       = true
+CFEnv.AssertionThrows      = true
+CFEnv.AssertThrows         = true
+CFEnv.AssertDumps          = true
+CFEnv.ExceptionDumps       = true
+CFEnv.ExceptionOutputs     = true
+CFEnv.RegistSignalHandlers = false
+CFEnv.OnlyCPU0Writes       = false
+#Vatsalya: Match the clean TCNEQ mesh-upgrade cases; MeshUpgrade options are configured lazily and can be reported as unused before the builder is created.
+CFEnv.ErrorOnUnusedConfig  = false
+
+# Libraries (same set as the solver case; mesh upgrade needs libMeshToolsFR)
+Simulator.Modules.Libs = libShapeFunctions libCFmeshFileWriter libCFmeshFileReader libParaViewWriter libTecplotWriter libNavierStokes libFluxReconstructionMethod libFluxReconstructionNavierStokes libNewtonMethod libPetscI libGmsh2CFmesh libKOmega libFluxReconstructionKOmega libAeroCoefFR libMeshToolsFVM libForwardEuler libMeshToolsFR libGReKO libFluxReconstructionGReKO libGammaAlpha libFluxReconstructionGammaAlpha
+
+# Write the upgraded mesh into THIS folder
+Simulator.Paths.WorkingDir = ./
+Simulator.Paths.ResultsDir = ./
+#Vatsalya: Direct coolfluid-solver launches need the module directory; otherwise libCFmeshFileWriter.so is not found before the testcase runs.
+Simulator.Paths.ModulesDir = /mnt/c/codes/COOLFluiD/COOLFluiD-merged/optim/dso
+
+# Only the mesh-upgrade subsystem (no flow solver)
+Simulator.SubSystems     = SubSysMesh
+Simulator.SubSystemTypes = OnlyMeshSubSystem
+Simulator.SubSysMesh.Namespaces = MeshNamespace
+Simulator.SubSysMesh.Ranks = 0:0
+Simulator.SubSysMesh.MeshNamespace.MeshData = MeshMeshData
+Simulator.SubSysMesh.MeshNamespace.SubSystemStatus = MeshSubSystemStatus
+
+#GammaAlpha physical model must match the 8-variable P0 restart being projected.
+Simulator.SubSysMesh.MeshNamespace.PhysicalModelType = NavierStokes2DGammaAlpha
+
+#Vatsalya: OLD solver-style InnerFaces TRS is commented below; MeshUpgradeBuilder uses cellStates_InnerCells/cellNodes_InnerCells, as in the working CNEQ P0-to-P1 case.
+#Simulator.SubSysMesh.MeshMeshData.listTRS = InnerFaces Wall Mirror Inlet Outlet
+Simulator.SubSysMesh.MeshMeshData.listTRS = Wall Mirror Inlet Outlet InnerCells
+Simulator.SubSysMesh.MeshMeshData.Namespaces = MeshNamespace
+
+# Output: P1 mesh with projected P0 solution
+Simulator.SubSysMesh.OutputFormat = CFmesh
+Simulator.SubSysMesh.CFmesh.FileName = flatPlateGReKLogOUpgraded_fromP0_physVS_P1.CFmesh
+Simulator.SubSysMesh.CFmesh.WriteSol = WriteSolution
+Simulator.SubSysMesh.CFmesh.Namespace = MeshNamespace
+
+# Input: converged P0 solution
+Simulator.SubSysMesh.MeshCreator = CFmeshFileReader
+Simulator.SubSysMesh.CFmeshFileReader.Data.FileName = flatPlateGReKLogOCoarse_physVS_P0_iter200.CFmesh
+Simulator.SubSysMesh.CFmeshFileReader.Namespace = MeshNamespace
+
+#Vatsalya: Match the working CNEQ case: P0 -> P1 with UpgradeInit=true so the converged P0 cell state is projected into P1 solution points.
+Simulator.SubSysMesh.SpaceMethod = Null
+Simulator.SubSysMesh.Null.Builder = MeshUpgrade
+Simulator.SubSysMesh.Null.MeshUpgrade.PolynomialOrder = P1
+Simulator.SubSysMesh.Null.MeshUpgrade.UpgradeInit = true
+Simulator.SubSysMesh.Null.Namespace = MeshNamespace

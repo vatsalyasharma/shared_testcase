@@ -1,0 +1,71 @@
+################################################################################
+# Upgrade shock-fitted mesh from P0 to P1 with UpgradeInit
+# Input: shockfitting_interp_v2.CFmesh (P0 mesh + interpolated P0 solution)
+# Output: shockfitting_v2_P1.CFmesh (P1 mesh with projected P0 solution)
+# Run: ./coolfluid-solver --scase MeshUpgrade_P1.CFcase
+################################################################################
+
+CFEnv.ExceptionLogLevel    = 1000
+CFEnv.DoAssertions         = true
+CFEnv.AssertionDumps       = true
+CFEnv.AssertionThrows      = true
+CFEnv.AssertThrows         = true
+CFEnv.AssertDumps          = true
+CFEnv.ExceptionDumps       = true
+CFEnv.ExceptionOutputs     = true
+CFEnv.RegistSignalHandlers = false
+CFEnv.OnlyCPU0Writes       = false
+CFEnv.ErrorOnUnusedConfig  = false
+
+Simulator.Modules.Libs = \
+  libShapeFunctions libCFmeshFileWriter libCFmeshFileReader \
+  libParaViewWriter libTecplotWriter \
+  libNEQ libFluxReconstructionMethod libFluxReconstructionNavierStokes \
+  libFluxReconstructionNEQ libForwardEuler libPetscI \
+  libGmsh2CFmesh libNavierStokes libGambit2CFmesh \
+  libPlatoI
+
+Simulator.Paths.ModulesDir = /mnt/c/codes/COOLFluiD/COOLFluiD-merged/optim/dso
+Simulator.Paths.WorkingDir = ./
+Simulator.Paths.ResultsDir = ./
+
+Simulator.SubSystems     = SubSysMesh
+Simulator.SubSystemTypes = OnlyMeshSubSystem
+
+Simulator.SubSysMesh.Namespaces = MeshNamespace
+Simulator.SubSysMesh.Ranks = 0:0
+Simulator.SubSysMesh.MeshNamespace.MeshData = MeshMeshData
+Simulator.SubSysMesh.MeshNamespace.SubSystemStatus = MeshSubSystemStatus
+
+# Physical model (required even for mesh upgrade)
+Simulator.SubSysMesh.MeshNamespace.PhysicalModelType = NavierStokes2DNEQ
+Simulator.SubSysMesh.NavierStokes2DNEQ.PropertyLibrary    = Plato
+Simulator.SubSysMesh.NavierStokes2DNEQ.Plato.mixtureName  = nitrogen2
+Simulator.SubSysMesh.NavierStokes2DNEQ.Plato.reactionName = nitrogen2
+Simulator.SubSysMesh.NavierStokes2DNEQ.Plato.transfName   = empty
+Simulator.SubSysMesh.NavierStokes2DNEQ.Plato.path         = /mnt/c/codes/COOLFluiD/ToSend/PLATO/plato_database-main_feb26/database-main
+Simulator.SubSysMesh.NavierStokes2DNEQ.Plato.Xtol         = 1.e-10
+Simulator.SubSysMesh.NavierStokes2DNEQ.nbSpecies          = 2
+Simulator.SubSysMesh.NavierStokes2DNEQ.nbEulerEqs         = 3
+Simulator.SubSysMesh.NavierStokes2DNEQ.nbVibEnergyEqs     = 0
+
+Simulator.SubSysMesh.MeshMeshData.listTRS = Wall Inlet Outlet ShockDown ShockUp
+Simulator.SubSysMesh.MeshMeshData.Namespaces = MeshNamespace
+
+# Output
+Simulator.SubSysMesh.OutputFormat = CFmesh
+Simulator.SubSysMesh.CFmesh.FileName = shockfitting_v2_P1.CFmesh
+Simulator.SubSysMesh.CFmesh.WriteSol = WriteSolution
+Simulator.SubSysMesh.CFmesh.Namespace = MeshNamespace
+
+# Input
+Simulator.SubSysMesh.MeshCreator = CFmeshFileReader
+Simulator.SubSysMesh.CFmeshFileReader.Data.FileName = shockfitting_interp_v2.CFmesh
+Simulator.SubSysMesh.CFmeshFileReader.Namespace = MeshNamespace
+
+# Mesh upgrade
+Simulator.SubSysMesh.SpaceMethod = Null
+Simulator.SubSysMesh.Null.Builder = MeshUpgrade
+Simulator.SubSysMesh.Null.MeshUpgrade.PolynomialOrder = P1
+Simulator.SubSysMesh.Null.MeshUpgrade.UpgradeInit = true
+Simulator.SubSysMesh.Null.Namespace = MeshNamespace
