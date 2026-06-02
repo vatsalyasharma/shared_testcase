@@ -15,24 +15,24 @@ cd <case folder>
 ```
 # 1) build the mesh for this order
 ```bash
-mpirun -n 1 $SOLVER --scase ./<MeshUpgrade...CFcase> 
+mpirun -np nproc ./coolfluid-solver --scase ./<MeshUpgrade...CFcase> 
 ```
 # 2) solve
 ```bash
-mpirun -n 1 $SOLVER --scase ./<solve...CFcase>      
+mpirun -n 1 ./coolfluid-solver --scase ./<solve...CFcase>      
 ```
 ### Example A — TCNEQ P0 (full chain from the base mesh)
 ```bash
 cd TCNEQ/Hornung_cylinder/P0
-mpirun -n 1 $SOLVER --scase ./MeshUpgrade_P0_Q2.CFcase --ldir $DSO   # sample_4block_v17.CFmesh -> sample_4block_v17_P0_Q2.CFmesh
-mpirun -n 1 $SOLVER --scase ./P0_TCNEQ_Q2.CFcase       --ldir $DSO   # solves on that mesh
+mpirun -n 1 ./coolfluid-solver --scase ./MeshUpgrade_P0_Q2.CFcase --ldir $DSO   # sample_4block_v17.CFmesh -> sample_4block_v17_P0_Q2.CFmesh
+mpirun -n 1 ./coolfluid-solver --scase ./P0_TCNEQ_Q2.CFcase       --ldir $DSO   # solves on that mesh
 ```
 
 ### Example B — TCNEQ P1 (starts from a saved P0 solution)
 ```bash
 cd TCNEQ/Hornung_cylinder/EF/P1
-mpirun -n 1 $SOLVER --scase ./MeshUpgrade_P0_to_P1.CFcase --ldir $DSO  # sample_v17_P0_TCNEQ_Q2_10iter.CFmesh -> P1 mesh
-mpirun -n 1 $SOLVER --scase ./P1_TCNEQ_Q2_EF.CFcase       --ldir $DSO  # solves the P1 case
+mpirun -n 1 ./coolfluid-solver --scase ./MeshUpgrade_P0_to_P1.CFcase --ldir $DSO  # sample_v17_P0_TCNEQ_Q2_10iter.CFmesh -> P1 mesh
+mpirun -n 1 ./coolfluid-solver --scase ./P1_TCNEQ_Q2_EF.CFcase       --ldir $DSO  # solves the P1 case
 ```
 CNEQ and RANS work the same way; just use the file names in each folder. The `.inter` file (when present) sets CFL etc. and can be edited while running. You may create your own inter files.
 
@@ -65,10 +65,10 @@ SOLVER=/mnt/c/codes/COOLFluiD/COOLFluiD-merged/optim/apps/Solver/coolfluid-solve
 ```bash
 cd CNEQ/Hornung_cylinder/Shock_fitting
 # 1) upgrade the P0 shock solution to P1
-mpirun -n 1 $SOLVER --scase ./MeshUpgrade_P1.CFcase 
+mpirun -n 1 ./coolfluid-solver --scase ./MeshUpgrade_P1.CFcase 
 #    shockfitting_interp_v2.CFmesh  ->  shockfitting_v2_P1.CFmesh
 # 2) solve P1 with the R-H boundary on ShockDown
-mpirun -n 1 $SOLVER --scase ./P1_CNEQ_SF.CFcase  
+mpirun -n 1 ./coolfluid-solver --scase ./P1_CNEQ_SF.CFcase  
 #    reads shockfitting_v2_P1.CFmesh + RH_postshock.dat ; CFL etc. in P1_CNEQ_SF.inter
 ```
 
@@ -76,10 +76,10 @@ mpirun -n 1 $SOLVER --scase ./P1_CNEQ_SF.CFcase
 ```bash
 cd TCNEQ/Hornung_cylinder/Shock_fitting
 # 1) upgrade the P0 shock solution to P1
-mpirun -n 1 $SOLVER --scase ./MeshUpgrade_P1.CFcase 
+mpirun -n 1 ./coolfluid-solver --scase ./MeshUpgrade_P1.CFcase 
 #    shockfitting_interp_TCNEQ.CFmesh  ->  shockfitting_TCNEQ_P1.CFmesh
 # 2) solve P1 with the R-H boundary on ShockDown
-mpirun -n 1 $SOLVER --scase ./P1_TCNEQ_SF.CFcase   
+mpirun -n 1 ./coolfluid-solver --scase ./P1_TCNEQ_SF.CFcase   
 #    reads shockfitting_TCNEQ_P1.CFmesh + RH_postshock.dat ; CFL in P1_TCNEQ_SF.inter
 ```
 
