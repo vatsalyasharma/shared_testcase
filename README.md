@@ -85,7 +85,7 @@ mpirun -n 1 $SOLVER --scase ./P1_TCNEQ_SF.CFcase
 
 That is all that is needed to run the shipped cases (verified for 5 iters).
 
-### How these cases were built (provenance)
+### How these cases were built 
 
 CNEQ is the original; TCNEQ was derived from it.
 
