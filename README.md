@@ -49,7 +49,7 @@ CNEQ and RANS work the same way; just use the file names in each folder. The `.i
 
 - Verified at 5 iterations (mesh upgrade + solve, clean exit, no errors): all CNEQ and TCNEQ cases (P0, EF, LLAV, Shock_fitting) and RANS p0/p1/p3/p7.
 
-- Shock fitting treats the shock as a moving boundary. The shock-aligned mesh is shipped (`shockfitting_interp_v2.CFmesh` / `shockfitting_v2.msh`), so the solve runs directly. To *regenerate* the mesh and close the iterative loop, the mesh-generator scripts are in `/mnt/c/codes/Hornung_cylinedr_mesh/shockfitting/` (pipeline: `extract_shock.py` → `hornung_shockfitted_v2_mesh.py` → `split_at_b23.py` → `interpolate_p0.py`, starting from the base `shock_contour.dat`). Workflow details in `Shock_fitting/shock_fitting_loop/README.md`. The TCNEQ shock R-H data is approximate.
+- Shock fitting treats the shock as a moving boundary. The shock-aligned mesh is there (`shockfitting_interp_v2.CFmesh` / `shockfitting_v2.msh`), so the solve runs directly. To *regenerate* the mesh and close the iterative loop, the mesh-generator scripts are in `/mnt/c/codes/Hornung_cylinedr_mesh/shockfitting/` (pipeline: `extract_shock.py` → `hornung_shockfitted_v2_mesh.py` → `split_at_b23.py` → `interpolate_p0.py`, starting from the base `shock_contour.dat`). Workflow details in `Shock_fitting/shock_fitting_loop/README.md`. The TCNEQ shock R-H data is approximate.
 - Empty `EF/P2`, `LLAV/P2` folders under CNEQ are placeholders for future orders.
 - Always change the paths inside the cases before using them.
 
@@ -83,7 +83,7 @@ mpirun -n 1 $SOLVER --scase ./P1_TCNEQ_SF.CFcase
 #    reads shockfitting_TCNEQ_P1.CFmesh + RH_postshock.dat ; CFL in P1_TCNEQ_SF.inter
 ```
 
-That is all that is needed to run the shipped cases (verified for 5 iters).
+That is all that is needed to run the cases in the repo (verified for 5 iters).
 
 ### How these cases were built 
 
@@ -91,7 +91,7 @@ CNEQ is the original; TCNEQ was derived from it.
 
 - **The shock-aligned mesh** comes from the generator folder
   `/mnt/c/codes/Hornung_cylinedr_mesh/shockfitting/`:
-  `extract_shock.py` (reads a converged P0 solution, finds the bow shock by its pressure jump) → `shock_contour.dat` → `hornung_shockfitted_v2_mesh.py` (base mesh) → `split_at_b23.py` (duplicates nodes at the shock to make  `ShockDown`/`ShockUp`) → `shockfitting_v2.msh` → `interpolate_p0.py` (puts the P0 solution on it) → `shockfitting_interp_v2.CFmesh`. That last file is the shipped CNEQ starting point.
+  `extract_shock.py` (reads a converged P0 solution, finds the bow shock by its pressure jump) → `shock_contour.dat` → `hornung_shockfitted_v2_mesh.py` (base mesh) → `split_at_b23.py` (duplicates nodes at the shock to make  `ShockDown`/`ShockUp`) → `shockfitting_v2.msh` → `interpolate_p0.py` (puts the P0 solution on it) → `shockfitting_interp_v2.CFmesh`. That last file is the CNEQ starting point.
 - **R-H data** (`RH_postshock.dat`) is produced by `tools/fix_upstream_and_compute_rh_v2.py` (post-shock state from the R-H jump relations along the shock line).
 - **TCNEQ from CNEQ:** the CNEQ P0 shock mesh was extended from 5 to 6 equations  (added `Tv = T`) → `shockfitting_interp_TCNEQ.CFmesh`; a `Tv` column (frozen freestream `1833 K`) was added to the R-H file; and the case was   switched to the TCNEQ VS path (`TNEQSourceTermVS`, `Euler2DNEQConsToRhoivtTvInRhoivtTvVS`, 6-component state). This R-H data is therefore **approximate** (single-T `T` + frozen `Tv`); regenerate it with a 2-temperature R-H for production.
 - The in-solver `ComputeShockVelocity` diagnostic is not in this build, so it was removed from the cases; compute the shock velocity with `shock_fitting_loop/step1_compute_new_shock_contour.py` instead.
