@@ -1,0 +1,21 @@
+# ============================================================
+# Interactive controls — cone GammaAlpha P0 (implicit)
+# Edit while the solver runs; re-read every 10 iters.
+# ============================================================
+
+# --- CFL ---
+# Transition cone is stiff: start VERY small and raise slowly once
+# residuals are steadily decreasing (e.g. 0.002 -> 0.005 -> 0.01 -> 0.015 ...).
+Simulator.SubSystem.NewtonIterator.Data.CFL.Interactive.CFL = 0.002
+
+# --- linear solver (Krylov iterations per Newton step) ---
+Simulator.SubSystem.NewtonIteratorLSS.Data.MaxIter = 1000
+
+# --- wall BC ---
+Simulator.SubSystem.FluxReconstruction.Data.Wall.T = 303.24
+# iteration at which to switch to isothermal wall (0 = isothermal from start)
+Simulator.SubSystem.FluxReconstruction.Data.Wall.ChangeToIsoT = 0
+
+# --- convergence / stop ---
+Simulator.SubSystem.RelativeNormAndMaxIter.MaxIter = 10000000
+Simulator.SubSystem.RelativeNormAndMaxIter.RelativeNorm = -7

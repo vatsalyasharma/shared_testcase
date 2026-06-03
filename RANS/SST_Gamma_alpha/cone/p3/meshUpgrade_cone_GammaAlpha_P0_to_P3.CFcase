@@ -1,0 +1,57 @@
+################################################################################
+# Mesh upgrade: P0 cone solution -> P3 (GammaAlpha), with solution projection
+#
+# INPUT:  kimmelConeGA_P0_iter100.CFmesh   (P0 solution, native CFmesh, UpgradeInit)
+# OUTPUT: kimmelConeGA_P3_fromP0.CFmesh    (P1 mesh + projected P0 field)
+#
+# Run:
+#   mpirun -n 1 <coolfluid-solver> --scase ./meshUpgrade_cone_GammaAlpha_P0_to_P1.CFcase --ldir <optim/dso>
+################################################################################
+
+CFEnv.ExceptionLogLevel    = 1000
+CFEnv.DoAssertions         = true
+CFEnv.AssertionDumps       = true
+CFEnv.AssertionThrows      = true
+CFEnv.AssertThrows         = true
+CFEnv.AssertDumps          = true
+CFEnv.ExceptionDumps       = false
+CFEnv.ExceptionOutputs     = false
+CFEnv.RegistSignalHandlers = false
+CFEnv.OnlyCPU0Writes       = false
+CFEnv.ErrorOnUnusedConfig  = false
+
+Simulator.Modules.Libs = libCFmeshFileWriter libCFmeshFileReader libParaViewWriter libTecplotWriter libNavierStokes libFluxReconstructionMethod libFluxReconstructionNavierStokes libNewtonMethod libPetscI libGmsh2CFmesh libKOmega libFluxReconstructionKOmega libAeroCoefFR libMeshToolsFVM libForwardEuler libMeshToolsFR libGReKO libFluxReconstructionGReKO libGammaAlpha libFluxReconstructionGammaAlpha
+
+Simulator.Paths.ModulesDir = /mnt/c/codes/COOLFluiD/COOLFluiD-merged/optim/dso
+Simulator.Paths.WorkingDir = ./
+Simulator.Paths.ResultsDir = ./
+
+##################################################################
+## SubSystemMesh only creates the mesh and upgrades it serially ##
+##################################################################
+
+Simulator.SubSystems     = SubSysMesh
+Simulator.SubSystemTypes = OnlyMeshSubSystem
+Simulator.SubSysMesh.Namespaces = MeshNamespace
+Simulator.SubSysMesh.Ranks = 0:0
+Simulator.SubSysMesh.MeshNamespace.MeshData = MeshMeshData
+Simulator.SubSysMesh.MeshNamespace.SubSystemStatus = MeshSubSystemStatus
+Simulator.SubSysMesh.MeshNamespace.PhysicalModelType = NavierStokes2DGammaAlpha
+Simulator.SubSysMesh.MeshMeshData.listTRS = InnerFaces Wall Mirror Inlet Outlet
+Simulator.SubSysMesh.MeshMeshData.Namespaces = MeshNamespace
+
+Simulator.SubSysMesh.OutputFormat = CFmesh
+Simulator.SubSysMesh.CFmesh.FileName = kimmelConeGA_P3_fromP0.CFmesh
+Simulator.SubSysMesh.CFmesh.WriteSol = WriteSolution
+Simulator.SubSysMesh.CFmesh.Namespace = MeshNamespace
+
+# Input: the P0 solution (native CFmesh -> no convertFrom)
+Simulator.SubSysMesh.MeshCreator = CFmeshFileReader
+Simulator.SubSysMesh.CFmeshFileReader.Data.FileName = kimmelConeGA_P0_iter100.CFmesh
+Simulator.SubSysMesh.CFmeshFileReader.Namespace = MeshNamespace
+
+Simulator.SubSysMesh.SpaceMethod = Null
+Simulator.SubSysMesh.Null.Builder = MeshUpgrade
+Simulator.SubSysMesh.Null.MeshUpgrade.PolynomialOrder = P3
+Simulator.SubSysMesh.Null.MeshUpgrade.UpgradeInit = true
+Simulator.SubSysMesh.Null.Namespace = MeshNamespace
