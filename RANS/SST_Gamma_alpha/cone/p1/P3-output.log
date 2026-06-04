@@ -1,0 +1,287 @@
+-------------------------------------------------------------
+Creating Simulation
+-------------------------------------------------------------
+Configuration of Simulator
+-------------------------------------------------------------
+-------------------------------------------------------------
+-------------------------------------------------------------
+Loading external modules
+Initiating environment of loaded modules
+Initiated PETSc
+-------------------------------------------------------------
+-------------------------------------------------------------
+#
+###### STARTING SUBSYSTEM [SubSystem] ######
+#
+-------------------------------------------------------------
+Building SubSystem
+Name : SubSystem
+Type : StandardSubSystem
+-------------------------------------------------------------
+#
+###### CONFIG PHASE #################
+#
+-------------------------------------------------------------
+Setting Namespace : Default
+MeshData          : Default
+PhysicalModelName : NavierStokes2DGammaAlpha
+PhysicalModelType : NavierStokes2DGammaAlpha
+SubSysStatus      : SubSystemStatus
+-------------------------------------------------------------
+-------------------------------------------------------------
+Creating MeshCreator : CFmeshFileReader
+-------------------------------------------------------------
+-------------------------------------------------------------
+Creating MeshAdapterMethod : Null1
+-------------------------------------------------------------
+-------------------------------------------------------------
+Creating CouplerMethod : Null2
+-------------------------------------------------------------
+-------------------------------------------------------------
+Creating SpaceMethod : FluxReconstruction
+Configure flux point distribution: GaussLegendre
+Configure solution point distribution: GaussLegendre
+Configure strategy type: VCJH
+Configure BC state computers
+BC type = BCNoSlipWallGammaAlpha2D
+BC name = Wall
+BC type = MirrorVelocity
+BC name = Mirror
+BC type = Dirichlet
+BC name = BcInlet
+BC type = SuperOutlet
+BC name = BcOutlet
+Configure Riemann flux: AUSMPlusFluxTurb2D
+SOURCE TERM type = GammaAlpha2DSourceTerm
+SOURCE TERM name = GammaAlpha2DSourceTerm
+INIT type = Null
+INIT name = InField
+FluxReconstruction: Creating convective boundary correction command for boundary condition: Wall
+ConvBndCorrectionsRHSJacobGammaAlpha
+FluxReconstruction: Creating diffusive boundary correction command for boundary condition: WallDiff
+Diffusive boundary: using provider 'DiffBndCorrectionsRHSJacobGammaAlpha'
+FluxReconstruction: Creating convective boundary correction command for boundary condition: Mirror
+ConvBndCorrectionsRHSJacobGammaAlpha
+FluxReconstruction: Creating diffusive boundary correction command for boundary condition: MirrorDiff
+Diffusive boundary: using provider 'DiffBndCorrectionsRHSJacobGammaAlpha'
+FluxReconstruction: Creating convective boundary correction command for boundary condition: BcInlet
+ConvBndCorrectionsRHSJacobGammaAlpha
+FluxReconstruction: Creating diffusive boundary correction command for boundary condition: BcInletDiff
+Diffusive boundary: using provider 'DiffBndCorrectionsRHSJacobGammaAlpha'
+FluxReconstruction: Creating convective boundary correction command for boundary condition: BcOutlet
+ConvBndCorrectionsRHSJacobGammaAlpha
+FluxReconstruction: Creating diffusive boundary correction command for boundary condition: BcOutletDiff
+Diffusive boundary: using provider 'DiffBndCorrectionsRHSJacobGammaAlpha'
+-------------------------------------------------------------
+StdSetup NeedsSockets
+-------------------------------------------------------------
+Creating ErrorEstimatorMethod : Null4
+-------------------------------------------------------------
+-------------------------------------------------------------
+Creating LinearSystemSolver : NewtonIteratorLSS
+-------------------------------------------------------------
+-------------------------------------------------------------
+Creating ConvergenceMethod : NewtonIterator
+-------------------------------------------------------------
+-------------------------------------------------------------
+Creating DataProcessing : DataProcessing1
+-------------------------------------------------------------
+-------------------------------------------------------------
+Creating DataProcessing : DataProcessing2
+-------------------------------------------------------------
+-------------------------------------------------------------
+Creating OutputFormatter : CFmesh
+-------------------------------------------------------------
+-------------------------------------------------------------
+Creating OutputFormatter : ParaView
+-------------------------------------------------------------
+-------------------------------------------------------------
+Creating OutputFormatter : Tecplot
+-------------------------------------------------------------
+StdSetup NeedsSockets
+WARNING : Unused User Configuration Arguments:
+Simulator.SubSystem.FluxReconstruction.ConvDiffRHSJacobTurb.AddFluxToGradCrossCellJacob false
+Simulator.SubSystem.FluxReconstruction.ConvDiffRHSJacobTurb.AddRiemannToGradCrossCellJacob false
+Simulator.SubSystem.FluxReconstruction.ConvDiffRHSJacobTurb.AddRiemannToGradJacob false
+Simulator.SubSystem.FluxReconstruction.Data.AUSMPlusUpFluxTurb2D.machInf 7.93
+Simulator.SubSystem.FluxReconstruction.InField.Def 300.3879397 1159.257634 0.0 53.1782473 0.0 7.268628324 0.99 24481.54924
+Simulator.SubSystem.FluxReconstruction.InField.Vars x y
+Simulator.SubSystem.FluxReconstruction.PhysicalityEuler2D.CheckInternal false
+Simulator.SubSystem.FluxReconstruction.PhysicalityEuler2D.MinPressure 1.0
+Simulator.SubSystem.FluxReconstruction.PhysicalityEuler2D.MinTemperature 1.0e-3
+Simulator.SubSystem.FluxReconstruction.PhysicalityEuler2D.MinTurbVars -10.0 -10000.0 -0.5 -100.0
+Simulator.SubSystem.FluxReconstruction.PhysicalityEuler2D.ShowRate 50
+Simulator.SubSystem.FwdEuler.ConvRate 20
+Simulator.SubSystem.FwdEuler.Data.CFL.Value 0.1
+Simulator.SubSystem.FwdEuler.ShowRate 20
+Simulator.SubSystem.Tecplot.Data.updateVar Puvt
+
+#
+###### SOCKETS PLUG PHASE ###########
+#
+StdSetup NeedsSockets
+#
+###### BUILD PHASE ##################
+#
+-------------------------------------------------------------
+Setting up all PhysicalModel's
+
+-------------------------------------------------------------
+-------------------------------------------------------------
+Setting up Physical Model [NavierStokes2DGammaAlpha]
+WATCH OUT: tempRef or machInf or Re missing
+Equations will be solved dimensionally
+-------------------------------------------------------------
+-------------------------------------------------------------
+Setting up all MeshCreator's
+-------------------------------------------------------------
+-------------------------------------------------------------
+Building MeshData's
+-------------------------------------------------------------
+-------------------------------------------------------------
+MeshCreator [CFmeshFileReader] Generate or Read Mesh
+
+Memory usage before building mesh: 4.95703 MB
+
+Original NbEquations = 8
+Final NbEquations    = 8
+Memory Usage before assembling connectivity: 4.95703 MB
+Calling mesh partitioner
++++
+ParMetis: ncommonnodes = 2
+ParMetis::doPartition() took 0.002002
++++
+ParCFmeshFileReader::moveElementData() => start memory usage: 5.44531 MB
+ParCFmeshFileReader::buildOverlapLayers()
+ParCFmeshFileReader::moveElementData() => end memory usage: 5.44531 MB
+Reading data from kimmelConeGA_P1_fromP0.CFmesh took 0.050847s
+Memory Usage after mesh reading: 5.70312 MB
+solPolyType = FluxReconstruction
+Building TRS: InnerCells
+nbElem = 498
+nbNodes = 2085
+nbBoundaryFaces = 37
+Face provider name = FaceLineLagrangeP2FluxReconstructionP1
+Face provider name = FaceLineLagrangeP2FluxReconstructionP1
+Face provider name = FaceLineLagrangeP2FluxReconstructionP1
+Face provider name = FaceLineLagrangeP2FluxReconstructionP1
+nbElemTypes: 498
+totalNbFaces = 1042
+nbInnerFaces = 950
+nbBPlusPartitionFaces = 92
+Building TRS: InnerFaces
+Created FR TRS InnerFaces with 950 local faces
+nbFaceTypes: 1
+nbInnerFaces: 950, last face idx: 950
+Building TRS: Inlet
+Built TRS named Inlet
+Building TRS: Mirror
+Built TRS named Mirror
+Building TRS: Outlet
+Built TRS named Outlet
+Building TRS: Wall
+Built TRS named Wall
+Number of partition faces detected = 55
+Building TRS: PartitionFaces
+Built PartitionFaces TRS 
+Building MeshData from ./kimmelConeGA_P1_fromP0.CFmesh took 0.058504s
+Building the mesh took: 0.059855s
+
+Memory usage after building mesh: 5.70312 MB
+-------------------------------------------------------------
+-------------------------------------------------------------
+MeshCreator [CFmeshFileReader] Building Mesh Data
+-------------------------------------------------------------
+Building TRS info for MeshData in Namespace Default
+DataHandle<MPI>::buildMap(Old) took 0.000269s
+DataHandle<MPI>::buildMap(Old) took 0.000173s
+#
+###### SETUP PHASE ##################
+#
+-------------------------------------------------------------
+Setting up DataPreProcessing's
+-------------------------------------------------------------
+Setting up MeshAdapterMethod's
+-------------------------------------------------------------
+Setting up ConvergenceMethod's
+-------------------------------------------------------------
+Setting up LinearSystemSolver's
+-------------------------------------------------------------
+Setting up SpaceMethod's
+NB NEGATIVE JACOB FOUND: 0
+NB NEGATIVE VOLUMES: 0
+-------------------------------------------------------------
+Setting up ErrorEstimatorMethod's
+-------------------------------------------------------------
+Setting up DataPostProcessing's
+-------------------------------------------------------------
+Setting up CouplerMethod's
+-------------------------------------------------------------
+CouplerMethod's setup
+-------------------------------------------------------------
+CouplerMethod's write interface coordinates
+-------------------------------------------------------------
+CouplerMethod's read interface coordinates
+-------------------------------------------------------------
+CouplerMethod's match mesh and write
+-------------------------------------------------------------
+CouplerMethod's read match mesh
+-------------------------------------------------------------
+Setting up OutputFormatter's
+ComputeWallDistanceVectorFRMPI::execute() => Computing distance to the wall ...
+ComputeWallDistanceVectorFRMPI::execute() => took 0.002351s
+
+-------------------------------------------------------------
+Initializing solution
+-------------------------------------------------------------
+Initializing solution of method [FluxReconstruction]
+-------------------------------------------------------------
+Writing initial solution ... 
+ParCFmeshFileWriter::writeToFile() => IO rank is 2
+Element written 
+Nodes written 
+States written 
+Writing solution to: ./_e/kimmelGAKLogOCoarseP1-iter_0.CFmesh
+Writing took 1.74486s
+Writing solution to: ./_e/kimmelGAKLogOCoarseP1-P3.vtu
+Writing took 0.035541s
+Writing solution to: ./_e/kimmelGAKLogOCoarseP1-P3-iter_0.plt
+Writing took 0.115356s
+-------------------------------------------------------------
+#
+###### RUN PHASE ####################
+#
+Iter: 10      Res: [    3.0220314 2.1171474 1.5897226 2.2328655 0.74638481 -0.1007716 -0.64263346 4.7378178 ]  CFL: 0.1      CPUTime: 12.850333 Mem: 68.75 MB
+
+Iter: 20      Res: [    2.9918251 2.0705221 1.6518874 2.1502251 0.59019421 -0.2092845 -0.67890909 4.7367949 ]  CFL: 0.1      CPUTime: 25.548187 Mem: 68.7422 MB
+
+Iter: 30      Res: [    3.0194167 2.0224783 1.6674383 2.0779696 0.49121949 -0.18396741 -0.72913499 4.7364364 ]  CFL: 0.1      CPUTime: 38.343877 Mem: 68.75 MB
+
+Iter: 40      Res: [    2.9654599 2.0124782 1.6498495 1.9889668 0.44000464 -0.24330434 -0.7417893 4.7362604 ]  CFL: 0.1      CPUTime: 51.075285 Mem: 68.7578 MB
+
+SubSystem WallTime: 50.5156s
+#
+###### UNSETUP PHASE ################
+#
+Total Number Iter: 40 Reached Residual: 2.01248 and took: 51.0763 sec
+ParCFmeshFileWriter::writeToFile() => IO rank is 2
+Element written 
+Nodes written 
+States written 
+Writing solution to: ./_e/kimmelGAKLogOCoarseP1-iter_40.CFmesh
+Writing took 1.85511s
+Writing solution to: ./_e/kimmelGAKLogOCoarseP1-P3.vtu
+Writing took 0.037803s
+Writing solution to: ./_e/kimmelGAKLogOCoarseP1-P3-iter_40.plt
+Writing took 0.116987s
+-------------------------------------------------------------
+#
+###### SOCKETS UNPLUG PHASE #########
+#
+#
+###### DESTRUCTION SUBSYSTEM PHASE #########
+#
+Terminated PETSc
+-------------------------------------------------------------
+COOLFluiD Environment Terminated
+-------------------------------------------------------------

@@ -1,0 +1,43 @@
+# ============================================================
+# INTERACTIVE PARAMETER CONTROL
+# Edit this file while the solver is running.
+# The solver reads it every iteration and applies changes.
+# ============================================================
+
+# --- CFL ---
+# Start at 0.1, ramp after T residual drops below 0
+Simulator.SubSystem.NewtonIterator.Data.CFL.Interactive.CFL = 0.5
+
+# --- NEWTON SOLVER ---
+# Relaxation factor (0-1, lower = more damped)
+Simulator.SubSystem.NewtonIterator.StdUpdateSol.Relaxation = 0.5
+
+# --- JACOBIAN FREEZE ---
+# Iteration after which to freeze Jacobian (set large to disable)
+Simulator.SubSystem.FluxReconstruction.Data.FreezeJacobIter = 200000000
+# Interval for Jacobian refresh when frozen (set large = stay frozen)
+Simulator.SubSystem.FluxReconstruction.Data.FreezeJacobInterval = 100000000
+
+# --- WALL BC ---
+# Wall temperature [K]
+Simulator.SubSystem.FluxReconstruction.Data.SWalls.T = 1000.
+# Iteration to switch to isothermal (0 = isothermal from start)
+Simulator.SubSystem.FluxReconstruction.Data.SWalls.ChangeToIsoT = 0
+
+# --- LINEAR SOLVER ---
+# Max Krylov iterations per Newton step
+Simulator.SubSystem.NewtonIteratorLSS.Data.MaxIter = 1000
+
+# --- CONVERGENCE ---
+# Target residual norm (log10)
+Simulator.SubSystem.AbsoluteNormAndMaxIter.AbsNorm = -8.0
+# Max iterations
+Simulator.SubSystem.AbsoluteNormAndMaxIter.MaxIter = 50000
+
+# --- OUTPUT ---
+# Save rate for CFmesh snapshots
+Simulator.SubSystem.CFmesh.SaveRate = 10000
+Simulator.SubSystem.ParaView.SaveRate       = 1000
+# --- STOP ---
+# Set to 1 to force-stop the simulation gracefully
+# Simulator.SubSystem.StopSimulation = 0

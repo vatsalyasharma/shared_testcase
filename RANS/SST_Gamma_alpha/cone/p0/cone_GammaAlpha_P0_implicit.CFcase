@@ -83,7 +83,7 @@ Simulator.SubSystem.CFmesh.FileName     = kimmelGAKLogOCoarseP0.CFmesh
 Simulator.SubSystem.CFmesh.SaveRate = 1000
 Simulator.SubSystem.CFmesh.AppendTime = false
 Simulator.SubSystem.CFmesh.AppendIter = true
-Simulator.SubSystem.CFmesh.WriteSol = WriteSolution
+Simulator.SubSystem.CFmesh.WriteSol = ParWriteSolution
 
 Simulator.SubSystem.ParaView.FileName    = kimmelGAKLogOCoarseP0.vtu
 Simulator.SubSystem.ParaView.Data.updateVar = Puvt

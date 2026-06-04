@@ -83,7 +83,7 @@ Simulator.SubSystem.CFmesh.FileName     = kimmelGAKLogOCoarseP5.CFmesh
 Simulator.SubSystem.CFmesh.SaveRate = 1000
 Simulator.SubSystem.CFmesh.AppendTime = false
 Simulator.SubSystem.CFmesh.AppendIter = true
-Simulator.SubSystem.CFmesh.WriteSol = WriteSolution
+Simulator.SubSystem.CFmesh.WriteSol = ParWriteSolution
 
 Simulator.SubSystem.ParaView.FileName    = kimmelGAKLogOCoarseP5.vtu
 Simulator.SubSystem.ParaView.Data.updateVar = Puvt
@@ -221,7 +221,7 @@ Simulator.SubSystem.FluxReconstruction.GammaAlpha2DSourceTerm.IsSSTV = true #fal
 Simulator.SubSystem.FluxReconstruction.GammaAlpha2DSourceTerm.NeglectSSTVTerm = true #false #
 
 ###################################
-Simulator.SubSystem.FluxReconstruction.InitComds = StdInitState #Null #
+Simulator.SubSystem.FluxReconstruction.InitComds = Null #StdInitState -- Vatsalya: keep projected P0 restart (cold-start StdInitState diverges to NaN ~iter6)
 Simulator.SubSystem.FluxReconstruction.InitNames = InField
 
 Simulator.SubSystem.FluxReconstruction.InField.applyTRS = InnerCells

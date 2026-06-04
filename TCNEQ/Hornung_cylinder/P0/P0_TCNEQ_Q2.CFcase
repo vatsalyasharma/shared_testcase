@@ -76,7 +76,7 @@ Simulator.SubSystem.CFmesh.FileName   = P0_TCNEQ_Q2.CFmesh
 Simulator.SubSystem.CFmesh.SaveRate   = 2000
 Simulator.SubSystem.CFmesh.AppendTime = false
 Simulator.SubSystem.CFmesh.AppendIter = true
-Simulator.SubSystem.CFmesh.WriteSol   = WriteSolution
+Simulator.SubSystem.CFmesh.WriteSol   = ParWriteSolution
 
 Simulator.SubSystem.ParaView.FileName       = P0_TCNEQ_Q2.vtu
 Simulator.SubSystem.ParaView.Data.updateVar = RhoivtTv
